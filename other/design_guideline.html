@@ -1,0 +1,444 @@
+
+<style>
+  :root {
+    --c-cream: #F5F2EA;
+    --c-green1: #E7F6C1;
+    --c-green2: #CDE8A4;
+    --c-green3: #7FA33B;
+    --c-dark:  #2E2E2E;
+    --c-yellow1:#FFF5CC;
+    --c-yellow2:#FFD86B;
+    --c-yellow3:#FFFDF6;
+    --c-bg:    #F2F4EF;
+    --c-success:#2E7D32;
+    --c-warn:  #F6A623;
+    --c-error: #E53935;
+    --c-info:  #607D8B;
+    --c-text:  #2E2E2E;
+    --c-text2: #6B6B5E;
+    --c-border:#D6D3C8;
+    --r: 12px;
+    --r-sm: 8px;
+    --r-pill: 100px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--c-bg); font-family: 'Inter', sans-serif; color: var(--c-text); padding: 0 0 32px; }
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600&display=swap');
+
+  .section { padding: 28px 28px 0; }
+  .section + .section { padding-top: 24px; }
+  h2 { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--c-text); margin-bottom: 16px; letter-spacing: -0.3px; }
+  h3 { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--c-text2); margin-bottom: 10px; }
+  p.note { font-size: 12px; color: var(--c-text2); line-height: 1.5; margin-bottom: 12px; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .card { background: white; border-radius: var(--r); padding: 16px; border: 1px solid var(--c-border); }
+
+  /* ── Color swatches ── */
+  .swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+  .swatch { border-radius: 8px; width: 52px; }
+  .swatch-box { height: 40px; border-radius: 8px 8px 0 0; border: 1px solid rgba(0,0,0,0.06); }
+  .swatch-label { font-size: 10px; color: var(--c-text2); text-align: center; padding: 4px 2px; line-height: 1.3; font-family: 'Inter', monospace; }
+
+  /* ── Type scale ── */
+  .type-row { display: flex; align-items: baseline; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--c-border); }
+  .type-row:last-child { border-bottom: none; }
+  .type-meta { width: 130px; flex-shrink: 0; }
+  .type-meta .name { font-size: 11px; font-weight: 600; color: var(--c-text2); }
+  .type-meta .spec { font-size: 10px; color: #aaa; margin-top: 2px; line-height: 1.4; }
+  .type-sample { flex: 1; }
+
+  /* ── Spacing ── */
+  .spacing-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
+  .spacing-bar { background: var(--c-green3); border-radius: 3px; height: 10px; }
+  .spacing-label { font-size: 11px; color: var(--c-text2); min-width: 100px; }
+
+  /* ── Radius ── */
+  .radius-row { display: flex; gap: 12px; align-items: flex-end; }
+  .radius-box { background: var(--c-green1); border: 1.5px solid var(--c-green3); width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; }
+  .radius-label { font-size: 10px; color: var(--c-text2); text-align: center; margin-top: 4px; }
+
+  /* ── Buttons ── */
+  .btn-primary { background: var(--c-dark); color: white; border: none; border-radius: var(--r-pill); padding: 12px 24px; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; }
+  .btn-secondary { background: white; color: var(--c-dark); border: 1.5px solid var(--c-dark); border-radius: var(--r-pill); padding: 11px 24px; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; }
+  .btn-ghost { background: var(--c-green1); color: var(--c-green3); border: none; border-radius: var(--r-pill); padding: 12px 24px; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; }
+
+  /* ── Input ── */
+  .input-wrap { position: relative; }
+  .input-wrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--c-text2); }
+  .input-field { width: 100%; background: white; border: 1.5px solid var(--c-border); border-radius: var(--r-pill); padding: 10px 16px 10px 36px; font-size: 14px; font-family: 'Inter', sans-serif; color: var(--c-text); outline: none; }
+  .input-field::placeholder { color: #bbb; }
+
+  /* ── Chips ── */
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { background: var(--c-yellow1); border: 1px solid var(--c-yellow2); color: var(--c-text); border-radius: var(--r-pill); padding: 5px 14px; font-size: 12px; font-weight: 500; font-family: 'Inter', sans-serif; }
+  .chip.active { background: var(--c-green3); color: white; border-color: var(--c-green3); }
+
+  /* ── Recipe card ── */
+  .recipe-card { background: white; border-radius: var(--r); overflow: hidden; border: 1px solid var(--c-border); }
+  .recipe-img { width: 100%; height: 100px; object-fit: cover; background: linear-gradient(135deg, #CDE8A4 0%, #7FA33B 100%); display: flex; align-items: center; justify-content: center; font-size: 28px; }
+  .recipe-body { padding: 12px; }
+  .recipe-title { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 600; color: var(--c-text); margin-bottom: 4px; }
+  .recipe-desc { font-size: 11px; color: var(--c-text2); line-height: 1.4; margin-bottom: 8px; }
+  .recipe-tags { display: flex; gap: 6px; }
+  .recipe-tag { font-size: 10px; background: var(--c-green1); color: var(--c-green3); border-radius: 4px; padding: 2px 7px; font-weight: 500; }
+
+  /* ── Step card ── */
+  .step-card { background: white; border-radius: var(--r); padding: 14px; border: 1px solid var(--c-border); }
+  .step-number { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: var(--c-green3); line-height: 1; margin-bottom: 6px; }
+  .step-text { font-size: 14px; color: var(--c-text); line-height: 1.6; }
+  .step-progress { margin-top: 12px; height: 4px; background: var(--c-green1); border-radius: 2px; }
+  .step-fill { height: 4px; background: var(--c-green3); border-radius: 2px; width: 30%; }
+
+  /* ── Icons ── */
+  .icon-grid { display: flex; gap: 16px; flex-wrap: wrap; }
+  .icon-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .icon-box { width: 40px; height: 40px; border-radius: 10px; background: var(--c-green1); display: flex; align-items: center; justify-content: center; }
+  .icon-name { font-size: 10px; color: var(--c-text2); text-align: center; }
+
+  /* ── Bottom sheet ── */
+  .bottom-sheet { background: white; border-radius: 20px 20px 0 0; border: 1px solid var(--c-border); padding: 16px; }
+  .sheet-handle { width: 32px; height: 4px; background: var(--c-border); border-radius: 2px; margin: 0 auto 14px; }
+
+  /* ── Divider ── */
+  .divider { border: none; border-top: 1px solid var(--c-border); margin: 20px 0; }
+
+  /* ── Functional color badges ── */
+  .badge { display: inline-flex; align-items: center; gap: 5px; border-radius: var(--r-pill); padding: 4px 10px; font-size: 11px; font-weight: 500; }
+  .badge-success { background: #E8F5E9; color: var(--c-success); }
+  .badge-warn    { background: #FFF8E1; color: #B45309; }
+  .badge-error   { background: #FFEBEE; color: var(--c-error); }
+  .badge-info    { background: #ECEFF1; color: var(--c-info); }
+
+  .separator { height: 1px; background: var(--c-border); margin: 0 28px; }
+</style>
+
+<!-- ══ HEADER ══ -->
+<div style="background:white; padding: 24px 28px 20px; border-bottom: 1px solid var(--c-border);">
+  <p style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--c-green3); margin-bottom:6px;">Efficient Mobile Cooking Guide</p>
+  <h1 style="font-family:'Playfair Display',serif; font-size:26px; font-weight:700; color:var(--c-text); line-height:1.2;">Interface Design Guideline</h1>
+  <p style="font-size:13px; color:var(--c-text2); margin-top:6px;">A complete spec for vibe-coding the app — colors, typography, sizing, components, icons, and imagery.</p>
+</div>
+
+<!-- ══ 1. DESIGN VIBE ══ -->
+<div class="section">
+  <h2>1. Design vibe</h2>
+  <div class="card">
+    <p class="note" style="font-size:13px; line-height:1.7; color:var(--c-text);">
+      The app feels like a <strong>warm, organized kitchen notebook</strong> — natural, calm, and trustworthy. It is not clinical or cold. The mood is <em>fresh ingredients on a wooden counter</em>: soft greens, warm creams, and golden accents. Food is always the visual hero. The UI stays out of the way — generous whitespace, rounded shapes, and gentle shadows let photography breathe. Interactions feel smooth and unhurried, with subtle feedback that rewards the user without demanding attention.
+    </p>
+    <div style="display:flex; gap:8px; margin-top:4px; flex-wrap:wrap;">
+      <span class="chip">Warm</span>
+      <span class="chip">Fresh</span>
+      <span class="chip">Calm</span>
+      <span class="chip">Inviting</span>
+      <span class="chip">Organized</span>
+      <span class="chip">Trustworthy</span>
+    </div>
+  </div>
+</div>
+
+<div class="separator" style="margin-top:24px;"></div>
+
+<!-- ══ 2. COLOR SYSTEM ══ -->
+<div class="section">
+  <h2>2. Color system</h2>
+  <p class="note">A soft, natural palette. Green is the brand anchor. Yellow for warmth and highlights. Dark near-black for text. Never pure #000 or pure #fff.</p>
+
+  <h3>Primary colors</h3>
+  <div class="swatches" style="margin-bottom:16px;">
+    <div class="swatch"><div class="swatch-box" style="background:#E7F6C1;"></div><div class="swatch-label">#E7F6C1<br>Green 100</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#CDE8A4;"></div><div class="swatch-label">#CDE8A4<br>Green 200</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#7FA33B;"></div><div class="swatch-label">#7FA33B<br>Green 500<br><em>Primary</em></div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#4E6E1E;"></div><div class="swatch-label">#4E6E1E<br>Green 700</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#2E2E2E; border:1px solid #ccc;"></div><div class="swatch-label">#2E2E2E<br>Dark</div></div>
+  </div>
+
+  <h3>Secondary / surface colors</h3>
+  <div class="swatches" style="margin-bottom:16px;">
+    <div class="swatch"><div class="swatch-box" style="background:#FFF5CC;"></div><div class="swatch-label">#FFF5CC<br>Yellow 100</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#FFD86B;"></div><div class="swatch-label">#FFD86B<br>Yellow 300</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#FFFDF6; border:1px solid #eee;"></div><div class="swatch-label">#FFFDF6<br>Cream</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#F2F4EF; border:1px solid #eee;"></div><div class="swatch-label">#F2F4EF<br>Page bg</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#FFFFFF; border:1px solid #eee;"></div><div class="swatch-label">#FFFFFF<br>Card bg</div></div>
+  </div>
+
+  <h3>Functional colors</h3>
+  <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:4px;">
+    <span class="badge badge-success">● #2E7D32 Success</span>
+    <span class="badge badge-warn">● #F6A623 Warning</span>
+    <span class="badge badge-error">● #E53935 Error</span>
+    <span class="badge badge-info">● #607D8B Info</span>
+  </div>
+
+  <div class="card" style="margin-top:14px;">
+    <h3 style="margin-bottom:8px;">Usage rules</h3>
+    <p class="note">• Page background: <code>#F2F4EF</code> — never white for the outer canvas.<br>
+    • Cards and sheets: <code>#FFFFFF</code> with <code>1px solid #D6D3C8</code> border.<br>
+    • Primary action button: <code>#2E2E2E</code> fill, white label — not green.<br>
+    • Green accent only on CTAs that are secondary or confirmatory (e.g. "Start Cooking").<br>
+    • Never use pure black (<code>#000</code>) or pure white (<code>#fff</code>) for text or backgrounds.</p>
+  </div>
+</div>
+
+<div class="separator" style="margin-top:24px;"></div>
+
+<!-- ══ 3. TYPOGRAPHY ══ -->
+<div class="section">
+  <h2>3. Typography</h2>
+  <p class="note">Two fonts only. Playfair Display (serif) for headings — creates warmth and appetite. Inter (sans-serif) for all body, labels, and UI text — clean and legible at small sizes.</p>
+
+  <div class="card">
+    <div class="type-row">
+      <div class="type-meta">
+        <div class="name">Display / Hero</div>
+        <div class="spec">Playfair Display<br>700 Bold · 32px<br>line-height 1.2</div>
+      </div>
+      <div class="type-sample" style="font-family:'Playfair Display',serif; font-size:32px; font-weight:700; line-height:1.2; color:var(--c-text);">Good Morning, Dan</div>
+    </div>
+    <div class="type-row">
+      <div class="type-meta">
+        <div class="name">H1 — Screen title</div>
+        <div class="spec">Playfair Display<br>600 SemiBold · 24px<br>line-height 1.3</div>
+      </div>
+      <div class="type-sample" style="font-family:'Playfair Display',serif; font-size:24px; font-weight:600; color:var(--c-text);">Chili Eggs on Avocado Toast</div>
+    </div>
+    <div class="type-row">
+      <div class="type-meta">
+        <div class="name">H2 — Card title</div>
+        <div class="spec">Playfair Display<br>400 Regular · 18px<br>line-height 1.3</div>
+      </div>
+      <div class="type-sample" style="font-family:'Playfair Display',serif; font-size:18px; font-weight:400; color:var(--c-text);">This Week's Recipe</div>
+    </div>
+    <div class="type-row">
+      <div class="type-meta">
+        <div class="name">Label / Nav</div>
+        <div class="spec">Inter<br>600 SemiBold · 13px<br>letter-spacing 0.2px</div>
+      </div>
+      <div class="type-sample" style="font-family:'Inter',sans-serif; font-size:13px; font-weight:600; letter-spacing:0.2px; color:var(--c-text);">INGREDIENTS · 15 min · Easy</div>
+    </div>
+    <div class="type-row">
+      <div class="type-meta">
+        <div class="name">Body</div>
+        <div class="spec">Inter<br>400 Regular · 14px<br>line-height 1.6</div>
+      </div>
+      <div class="type-sample" style="font-family:'Inter',sans-serif; font-size:14px; font-weight:400; line-height:1.6; color:var(--c-text);">Heat a large pan over high heat and crisp up the sourdough bread until golden brown.</div>
+    </div>
+    <div class="type-row">
+      <div class="type-meta">
+        <div class="name">Caption / Meta</div>
+        <div class="spec">Inter<br>400 Regular · 12px<br>color: text2</div>
+      </div>
+      <div class="type-sample" style="font-family:'Inter',sans-serif; font-size:12px; color:var(--c-text2);">Short description of the recipe goes here in one or two lines.</div>
+    </div>
+    <div class="type-row">
+      <div class="type-meta">
+        <div class="name">Micro / Tag</div>
+        <div class="spec">Inter<br>500 Medium · 11px<br>uppercase, ls 0.8px</div>
+      </div>
+      <div class="type-sample" style="font-family:'Inter',sans-serif; font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:0.8px; color:var(--c-text2);">Cooking steps · Step 3 of 13</div>
+    </div>
+  </div>
+</div>
+
+<div class="separator" style="margin-top:24px;"></div>
+
+<!-- ══ 4. SPACING & RADIUS ══ -->
+<div class="section">
+  <h2>4. Spacing &amp; border radius</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Spacing scale (8pt grid)</h3>
+      <div class="spacing-row"><div class="spacing-bar" style="width:4px;"></div><div class="spacing-label">4px — micro gap</div></div>
+      <div class="spacing-row"><div class="spacing-bar" style="width:8px;"></div><div class="spacing-label">8px — tight (tags, icons)</div></div>
+      <div class="spacing-row"><div class="spacing-bar" style="width:12px;"></div><div class="spacing-label">12px — inner padding sm</div></div>
+      <div class="spacing-row"><div class="spacing-bar" style="width:16px;"></div><div class="spacing-label">16px — card padding</div></div>
+      <div class="spacing-row"><div class="spacing-bar" style="width:24px;"></div><div class="spacing-label">24px — section gap</div></div>
+      <div class="spacing-row"><div class="spacing-bar" style="width:32px;"></div><div class="spacing-label">32px — screen padding</div></div>
+    </div>
+    <div class="card">
+      <h3>Border radius</h3>
+      <div class="radius-row" style="flex-wrap:wrap;">
+        <div><div class="radius-box" style="border-radius:4px;"></div><div class="radius-label">4px<br>Tag / badge</div></div>
+        <div><div class="radius-box" style="border-radius:8px;"></div><div class="radius-label">8px<br>Button sm</div></div>
+        <div><div class="radius-box" style="border-radius:12px;"></div><div class="radius-label">12px<br>Card</div></div>
+        <div><div class="radius-box" style="border-radius:20px;"></div><div class="radius-label">20px<br>Sheet</div></div>
+        <div><div class="radius-box" style="border-radius:100px; width:52px; height:34px;"></div><div class="radius-label">pill<br>CTA btn</div></div>
+      </div>
+      <p class="note" style="margin-top:12px;">Use 12px for cards and input fields. Full pill only for primary buttons, chips, and tags. Never sharp 0px corners.</p>
+    </div>
+  </div>
+</div>
+
+<div class="separator" style="margin-top:24px;"></div>
+
+<!-- ══ 5. UI COMPONENTS ══ -->
+<div class="section">
+  <h2>5. UI components</h2>
+
+  <h3>Buttons</h3>
+  <div class="card" style="margin-bottom:12px;">
+    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:12px;">
+      <button class="btn-primary">Start cooking</button>
+      <button class="btn-secondary">Save recipe</button>
+      <button class="btn-ghost">+ Add ingredient</button>
+    </div>
+    <p class="note">
+      <strong>Primary (dark pill):</strong> #2E2E2E bg · white Inter 500 14px · border-radius pill · padding 12px 24px · use for the single most important action per screen.<br>
+      <strong>Secondary (outline pill):</strong> white bg · #2E2E2E border 1.5px · same sizing · use for secondary actions.<br>
+      <strong>Ghost (green tint):</strong> #E7F6C1 bg · #7FA33B text · use for additive / soft actions.<br>
+      All buttons: min-height 44px · no text shadow · hover state: 8% darker fill.
+    </p>
+  </div>
+
+  <h3>Input field</h3>
+  <div class="card" style="margin-bottom:12px;">
+    <div class="input-wrap" style="max-width:320px; margin-bottom:10px;">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="input-field" placeholder="Search recipes, ingredients…" />
+    </div>
+    <p class="note">
+      <strong>Default:</strong> white bg · #D6D3C8 border 1.5px · border-radius pill · padding 10px 16px 10px 36px · Inter 14px.<br>
+      <strong>Focus:</strong> border #7FA33B 2px · no box-shadow.<br>
+      <strong>Icon:</strong> 16px stroke, left-aligned at 12px inset, color #6B6B5E.
+    </p>
+  </div>
+
+  <h3>Chips / Tags</h3>
+  <div class="card" style="margin-bottom:12px;">
+    <div class="chips" style="margin-bottom:10px;">
+      <span class="chip">Breakfast</span>
+      <span class="chip">Quick</span>
+      <span class="chip active">Vegetarian</span>
+      <span class="chip">+ More</span>
+    </div>
+    <p class="note">
+      <strong>Default:</strong> #FFF5CC bg · #FFD86B border · border-radius pill · padding 5px 14px · Inter 500 12px.<br>
+      <strong>Active/selected:</strong> #7FA33B bg · white text · no border.
+    </p>
+  </div>
+
+  <h3>Recipe card</h3>
+  <div class="grid2" style="margin-bottom:12px;">
+    <div class="recipe-card">
+      <div class="recipe-img">🥑</div>
+      <div class="recipe-body">
+        <div class="recipe-title">Chili eggs on avocado toast</div>
+        <div class="recipe-desc">A versatile dish — crispy sourdough, fluffy eggs, creamy avocado.</div>
+        <div class="recipe-tags">
+          <span class="recipe-tag">15 min</span>
+          <span class="recipe-tag">Easy</span>
+          <span class="recipe-tag">450 cal</span>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="font-size:12px; color:var(--c-text2); line-height:1.8;">
+      <strong style="font-size:11px; text-transform:uppercase; letter-spacing:0.8px;">Card anatomy</strong><br><br>
+      • Image: 100px tall, object-fit cover, border-radius 12px 12px 0 0<br>
+      • Title: Playfair 15px 600, #2E2E2E<br>
+      • Description: Inter 11px, #6B6B5E, 2 lines max<br>
+      • Tags: green pill tags, 10px Inter 500<br>
+      • Card: white bg, 1px #D6D3C8 border, 12px radius, no drop-shadow
+    </div>
+  </div>
+
+  <h3>Live cooking step card</h3>
+  <div class="grid2" style="margin-bottom:12px;">
+    <div class="step-card">
+      <div class="step-number">03</div>
+      <div class="step-text">Heat a large pan over high heat and crisp up the sourdough bread until golden brown. Set aside.</div>
+      <div class="step-progress"><div class="step-fill"></div></div>
+    </div>
+    <div class="card" style="font-size:12px; color:var(--c-text2); line-height:1.8;">
+      <strong style="font-size:11px; text-transform:uppercase; letter-spacing:0.8px;">Step card anatomy</strong><br><br>
+      • Step number: Playfair 28px 700, #7FA33B<br>
+      • Instruction text: Inter 14px 400, line-height 1.6<br>
+      • Progress bar: 4px tall, #E7F6C1 track, #7FA33B fill<br>
+      • "Prev / Next" nav: large pill buttons at bottom<br>
+      • Modify + Timer: round icon buttons, 48×48px, #E7F6C1 bg
+    </div>
+  </div>
+
+  <h3>Bottom sheet</h3>
+  <div class="bottom-sheet" style="max-width:320px; margin-bottom:4px;">
+    <div class="sheet-handle"></div>
+    <p style="font-family:'Playfair Display',serif; font-size:16px; font-weight:600; margin-bottom:6px;">Find substitute</p>
+    <p style="font-size:12px; color:var(--c-text2);">Choose a replacement for yellow onion.</p>
+  </div>
+  <p class="note" style="margin-top:8px;">Bottom sheets: border-radius 20px 20px 0 0 · white bg · drag handle: 32×4px, #D6D3C8, centered · max height 80vh · backdrop: rgba(0,0,0,0.3) blur 2px.</p>
+</div>
+
+<div class="separator" style="margin-top:24px;"></div>
+
+<!-- ══ 6. ICON STYLE ══ -->
+<div class="section">
+  <h2>6. Icon style</h2>
+  <div class="card">
+    <div class="icon-grid" style="margin-bottom:14px;">
+      <div class="icon-item">
+        <div class="icon-box"><svg width="20" height="20" fill="none" stroke="#7FA33B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+        <div class="icon-name">Home</div>
+      </div>
+      <div class="icon-item">
+        <div class="icon-box"><svg width="20" height="20" fill="none" stroke="#7FA33B" stroke-width="1.8" stroke-linecap="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+        <div class="icon-name">Search</div>
+      </div>
+      <div class="icon-item">
+        <div class="icon-box"><svg width="20" height="20" fill="none" stroke="#7FA33B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></div>
+        <div class="icon-name">Save</div>
+      </div>
+      <div class="icon-item">
+        <div class="icon-box"><svg width="20" height="20" fill="none" stroke="#7FA33B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <div class="icon-name">Profile</div>
+      </div>
+      <div class="icon-item">
+        <div class="icon-box"><svg width="20" height="20" fill="none" stroke="#7FA33B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <div class="icon-name">Timer</div>
+      </div>
+      <div class="icon-item">
+        <div class="icon-box"><svg width="20" height="20" fill="none" stroke="#7FA33B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+        <div class="icon-name">Add</div>
+      </div>
+      <div class="icon-item">
+        <div class="icon-box"><svg width="20" height="20" fill="none" stroke="#7FA33B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+        <div class="icon-name">Done</div>
+      </div>
+      <div class="icon-item">
+        <div class="icon-box"><svg width="20" height="20" fill="none" stroke="#7FA33B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+        <div class="icon-name">Edit</div>
+      </div>
+    </div>
+    <p class="note">
+      <strong>Style:</strong> Lucide / Feather icon set — stroke-only, no fill, stroke-width 1.8px, stroke-linecap round, stroke-linejoin round.<br>
+      <strong>Size:</strong> 20×20px in nav / cards · 24×24px in headers · 16×16px inline in text.<br>
+      <strong>Color:</strong> #7FA33B on light bg · #2E2E2E for neutral/dark contexts · #FFFFFF on dark button backgrounds.<br>
+      <strong>Touch target:</strong> always wrap in 44×44px minimum tap area.
+    </p>
+  </div>
+</div>
+
+<div class="separator" style="margin-top:24px;"></div>
+
+<!-- ══ 7. IMAGERY STYLE ══ -->
+<div class="section">
+  <h2>7. Imagery style</h2>
+  <div class="card">
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px;">
+      <div style="height:70px; border-radius:10px; background:linear-gradient(135deg,#f0d9a0,#c8a460); display:flex;align-items:center;justify-content:center;font-size:24px;">🍝</div>
+      <div style="height:70px; border-radius:10px; background:linear-gradient(135deg,#b8d4a0,#7a9e5e); display:flex;align-items:center;justify-content:center;font-size:24px;">🥗</div>
+      <div style="height:70px; border-radius:10px; background:linear-gradient(135deg,#f5c2a0,#d4835a); display:flex;align-items:center;justify-content:center;font-size:24px;">🍳</div>
+      <div style="height:70px; border-radius:10px; background:linear-gradient(135deg,#e8d4b0,#c4a06a); display:flex;align-items:center;justify-content:center;font-size:24px;">🍞</div>
+    </div>
+    <p class="note" style="line-height:1.8;">
+      <strong>Tone:</strong> Warm, natural, well-lit — daylight or golden hour. Avoid studio-cold white backgrounds.<br>
+      <strong>Color grading:</strong> Warm highlights (+10 temp), slightly lifted shadows. Greens feel fresh, not neon.<br>
+      <strong>Composition:</strong> Overhead (flat-lay) or 45° angle. Hero images fill the card edge-to-edge. Never portrait crop on landscape cards.<br>
+      <strong>Subjects:</strong> Real ingredients, texture-forward. Show the cooking process, not just the plated result.<br>
+      <strong>Aspect ratios:</strong> 16:9 for hero banners · 4:3 for recipe cards · 1:1 for cuisine category tiles · 3:4 for step-by-step instruction photos.<br>
+      <strong>Overlay text:</strong> Use a 20–30% dark gradient scrim at the bottom if placing text on top of images. Never a solid block.
+    </p>
+  </div>
+</div>
+
+<div style="height:32px;"></div>
