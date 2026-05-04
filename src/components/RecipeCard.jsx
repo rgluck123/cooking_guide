@@ -7,7 +7,7 @@ const RecipeCard = ({ title, time, image, isBookLink = false, onClick }) => {
       <div 
         onClick={onClick}
         style={{
-          width: '140px',
+          width: '180px',
           height: '220px',
           display: 'flex',
           flexDirection: 'column',
@@ -19,33 +19,47 @@ const RecipeCard = ({ title, time, image, isBookLink = false, onClick }) => {
           position: 'relative'
         }}
       >
+        {/* Custom Book SVG Background */}
         <svg 
           xmlns="http://www.w3.org/2000/svg" 
-          width="100px" 
-          height="140px" 
-          viewBox="0 0 24 24" 
+          width="180" 
+          height="220" 
+          viewBox="0 0 180 220" 
           fill="none" 
           stroke="var(--text)" 
-          strokeWidth="1.5" 
+          strokeWidth="1" 
           strokeLinecap="round" 
           strokeLinejoin="round"
-          style={{ position: 'absolute' }}
+          style={{ position: 'absolute', top: 0, left: 0 }}
         >
-          <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+          {/* Next Page / Page Depth (Solid line placed very close to the cover) */}
+          <path d="M157 14 V206 A8 8 0 0 1 149 210 H30" strokeWidth="0.8" />
+          
+          {/* Main Front Cover */}
+          <rect x="20" y="10" width="135" height="200" rx="8" />
+          
+          {/* Spine Binding Details */}
+          <line x1="35" y1="10" x2="35" y2="210" />
+          <line x1="20" y1="30" x2="35" y2="30" />
+          <line x1="20" y1="190" x2="35" y2="190" />
+
+          {/* Bookmark Ribbon hanging out */}
+          <path d="M 120 210 v 10 l -5 -4 l -5 4 v -10" fill="var(--text)" strokeWidth="0.8" />
         </svg>
 
         <span style={{ 
           position: 'relative',
           zIndex: 1,
-          fontWeight: '700', 
+          fontWeight: '800', 
           fontFamily: 'var(--heading)', 
           textAlign: 'center', 
           color: 'var(--text)',
-          fontSize: '16px',
+          fontSize: '22px',
           lineHeight: '1.2',
-          padding: '0 12px'
+          padding: '0 16px 0 24px',
+          marginTop: '-10px' // Lift text slightly so ribbon is visible below
         }}>
-          My Recipe Book
+          My<br/>Recipe<br/>Book
         </span>
       </div>
     );

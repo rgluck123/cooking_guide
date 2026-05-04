@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Search, SlidersHorizontal, User } from 'lucide-react';
 import HorizontalScroll from '../components/HorizontalScroll';
 import RecipeCard from '../components/RecipeCard';
+import { useRecipes } from '../context/RecipeContext';
 
 const Home = () => {
   const navigate = useNavigate();
+  const { savedRecipes } = useRecipes();
 
   const handleSearchClick = () => {
     // Potentially open full search or just navigate to results
@@ -22,7 +24,7 @@ const Home = () => {
   return (
     <div style={{ paddingBottom: '90px' }}>
       {/* Header */}
-      <header style={{ padding: '24px 20px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header style={{ padding: 'calc(24px + env(safe-area-inset-top)) 20px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '800', color: 'var(--accent-green)' }}>Cooking Guide</h1>
         <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--accent-green-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
           <User size={20} color="var(--accent-green)" />
@@ -45,6 +47,11 @@ const Home = () => {
           <input 
             type="text" 
             placeholder="Search recipes..." 
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                navigate('/results');
+              }
+            }}
             style={{ 
               border: 'none', 
               outline: 'none', 
@@ -83,10 +90,10 @@ const Home = () => {
       <section style={{ marginBottom: '32px' }}>
         <h3 style={{ padding: '0 20px', fontSize: '20px', marginBottom: '16px' }}>Recent Recipes</h3>
         <HorizontalScroll>
-          <RecipeCard title="Lebanese Spicy Chicken" time="45" image="https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?auto=format&fit=crop&w=300&q=80" />
-          <RecipeCard title="White Bean Basil Chicken Chili" time="70" image="https://images.unsplash.com/photo-1548943487-a2e4f43b4850?auto=format&fit=crop&w=300&q=80" />
-          <RecipeCard title="Veggie & Rice Stir-Fry" time="65" image="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=300&q=80" />
-          <RecipeCard title="Beef Tacos" time="30" image="https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?auto=format&fit=crop&w=300&q=80" />
+          <RecipeCard title="Greek Yogurt Lemon Chicken" time="35" image="https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=300&q=80" onClick={() => navigate('/recipe/1')} />
+          <RecipeCard title="White Bean Basil Chicken Chili" time="70" image="https://images.unsplash.com/photo-1552611052-33e04de081de?auto=format&fit=crop&w=300&q=80" onClick={() => navigate('/recipe/1')} />
+          <RecipeCard title="Veggie & Rice Stir-Fry" time="65" image="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=300&q=80" onClick={() => navigate('/recipe/1')} />
+          <RecipeCard title="Beef Tacos" time="30" image="https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?auto=format&fit=crop&w=300&q=80" onClick={() => navigate('/recipe/1')} />
         </HorizontalScroll>
       </section>
 
@@ -95,7 +102,7 @@ const Home = () => {
         <h3 style={{ padding: '0 20px', fontSize: '20px', marginBottom: '16px' }}>Cuisines</h3>
         <HorizontalScroll>
           {cuisines.map(c => (
-            <div key={c.name} style={{
+            <div key={c.name} onClick={() => navigate('/results')} style={{
               width: '100px',
               height: '100px',
               borderRadius: '50%',
@@ -141,11 +148,28 @@ const Home = () => {
       {/* My Recipe Book */}
       <section style={{ marginBottom: '32px' }}>
         <h3 style={{ padding: '0 20px', fontSize: '20px', marginBottom: '16px' }}>My Recipe Book</h3>
-        <HorizontalScroll>
+        <HorizontalScroll gap="8px">
           <RecipeCard isBookLink onClick={() => console.log('Go to book')} />
-          <RecipeCard title="Chili Eggs on Avocado Toast" time="15" image="https://images.unsplash.com/photo-1482049016688-2d3e1b311543?auto=format&fit=crop&w=300&q=80" />
-          <RecipeCard title="Pancakes with Syrup" time="20" image="https://images.unsplash.com/photo-1528207776546-365bb710ee93?auto=format&fit=crop&w=300&q=80" />
-          <RecipeCard title="Lebanese Fattoush Salad" time="20" image="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=300&q=80" />
+          {savedRecipes.length > 0 ? (
+            savedRecipes.map((recipe) => (
+              <RecipeCard 
+                key={recipe.id}
+                title={recipe.name} 
+                time={recipe.time.replace(' mins', '')} 
+                image={recipe.image} 
+                onClick={() => console.log('View recipe:', recipe.id)} 
+              />
+            ))
+          ) : (
+            <div style={{
+              padding: '40px 20px',
+              textAlign: 'center',
+              color: 'var(--text-light)',
+              fontSize: '14px'
+            }}>
+              No saved recipes yet. Cook and save a recipe!
+            </div>
+          )}
         </HorizontalScroll>
       </section>
     </div>

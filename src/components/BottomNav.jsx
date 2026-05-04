@@ -6,6 +6,10 @@ const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  if (location.pathname.startsWith('/recipe')) {
+    return null;
+  }
+
   const navItems = [
     { name: 'Home', path: '/', icon: <Home size={24} /> },
     { name: 'Search', path: '/results', icon: <Search size={24} /> },

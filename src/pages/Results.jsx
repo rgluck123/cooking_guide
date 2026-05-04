@@ -7,7 +7,8 @@ const Results = () => {
   const navigate = useNavigate();
 
   const results = [
-    { title: 'White Bean Basil Chicken Chili', time: '70', image: 'https://images.unsplash.com/photo-1548943487-a2e4f43b4850?auto=format&fit=crop&w=400&q=80' },
+    { title: 'Lebanese Spicy Chicken', time: '45', image: 'https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?auto=format&fit=crop&w=400&q=80' },
+    { title: 'White Bean Basil Chicken Chili', time: '70', image: 'https://images.unsplash.com/photo-1552611052-33e04de081de?auto=format&fit=crop&w=400&q=80' },
     { title: 'Veggie & Rice Stir-Fry', time: '65', image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=400&q=80' },
     { title: 'Turkey Tacos', time: '45', image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=400&q=80' },
     { title: 'Lebanese Fattoush Salad', time: '20', image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=400&q=80' }
@@ -16,7 +17,7 @@ const Results = () => {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', paddingBottom: '40px' }}>
       {/* Header */}
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 20px', position: 'sticky', top: 0, backgroundColor: 'var(--bg)', zIndex: 10 }}>
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'calc(24px + env(safe-area-inset-top)) 20px', position: 'sticky', top: 0, backgroundColor: 'var(--bg)', zIndex: 10 }}>
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <ChevronLeft size={28} color="var(--text)" />
         </button>
@@ -42,6 +43,7 @@ const Results = () => {
             title={r.title} 
             time={r.time} 
             image={r.image} 
+            onClick={() => navigate('/recipe/1')}
           />
         ))}
       </div>

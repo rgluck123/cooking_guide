@@ -42,7 +42,7 @@ const Filter = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg)' }}>
       {/* Header */}
-      <header style={{ display: 'flex', alignItems: 'center', padding: '24px 20px', position: 'sticky', top: 0, backgroundColor: 'var(--bg)', zIndex: 10 }}>
+      <header style={{ display: 'flex', alignItems: 'center', padding: 'calc(24px + env(safe-area-inset-top)) 20px', position: 'sticky', top: 0, backgroundColor: 'var(--bg)', zIndex: 10 }}>
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <ChevronLeft size={28} color="var(--text)" />
         </button>

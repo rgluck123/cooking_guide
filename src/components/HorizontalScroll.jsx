@@ -1,17 +1,19 @@
 import React from 'react';
 
-const HorizontalScroll = ({ children, className = '' }) => {
+const HorizontalScroll = ({ children, className = '', gap = '16px' }) => {
   return (
     <div 
       className={`no-scrollbar ${className}`}
       style={{
         display: 'flex',
         overflowX: 'auto',
-        gap: '16px',
-        padding: '0 20px 16px 20px',
+        gap: gap,
+        paddingLeft: '20px',
+        paddingRight: '20px',
+        paddingBottom: '16px',
         scrollSnapType: 'x mandatory',
-        boxSizing: 'border-box',
-        width: '100%'
+        boxSizing: 'content-box',
+        width: 'calc(100% - 40px)'
       }}
     >
       {React.Children.map(children, (child, index) => (
