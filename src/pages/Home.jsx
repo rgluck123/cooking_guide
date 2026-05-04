@@ -1,0 +1,155 @@
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Search, SlidersHorizontal, User } from 'lucide-react';
+import HorizontalScroll from '../components/HorizontalScroll';
+import RecipeCard from '../components/RecipeCard';
+
+const Home = () => {
+  const navigate = useNavigate();
+
+  const handleSearchClick = () => {
+    // Potentially open full search or just navigate to results
+  };
+
+  const cuisines = [
+    { name: 'Lebanese', image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=200&q=80' },
+    { name: 'Italian', image: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=200&q=80' },
+    { name: 'Mexican', image: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=200&q=80' },
+    { name: 'Japanese', image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=200&q=80' },
+    { name: 'Indian', image: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?auto=format&fit=crop&w=200&q=80' }
+  ];
+
+  return (
+    <div style={{ paddingBottom: '90px' }}>
+      {/* Header */}
+      <header style={{ padding: '24px 20px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: '800', color: 'var(--accent-green)' }}>Cooking Guide</h1>
+        <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--accent-green-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <User size={20} color="var(--accent-green)" />
+        </div>
+      </header>
+
+      {/* Search and Filter */}
+      <div style={{ padding: '0 20px 24px', display: 'flex', gap: '12px' }}>
+        <div style={{ 
+          flex: 1, 
+          display: 'flex', 
+          alignItems: 'center', 
+          backgroundColor: 'var(--surface)', 
+          borderRadius: '12px',
+          padding: '12px 16px',
+          boxShadow: 'var(--shadow)',
+          border: '1px solid var(--border)'
+        }}>
+          <Search size={20} color="var(--text-light)" />
+          <input 
+            type="text" 
+            placeholder="Search recipes..." 
+            style={{ 
+              border: 'none', 
+              outline: 'none', 
+              marginLeft: '12px', 
+              width: '100%',
+              fontSize: '16px',
+              fontFamily: 'var(--sans)'
+            }} 
+          />
+        </div>
+        <button 
+          onClick={() => navigate('/filter')}
+          style={{
+            backgroundColor: 'var(--accent-green)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '12px',
+            padding: '0 20px',
+            display: 'flex',
+            gap: '8px',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            boxShadow: 'var(--shadow)',
+            fontWeight: '700',
+            fontFamily: 'var(--sans)',
+            fontSize: '16px'
+          }}
+        >
+          <SlidersHorizontal size={20} />
+          Filter
+        </button>
+      </div>
+
+      {/* Recent Recipes */}
+      <section style={{ marginBottom: '32px' }}>
+        <h3 style={{ padding: '0 20px', fontSize: '20px', marginBottom: '16px' }}>Recent Recipes</h3>
+        <HorizontalScroll>
+          <RecipeCard title="Lebanese Spicy Chicken" time="45" image="https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?auto=format&fit=crop&w=300&q=80" />
+          <RecipeCard title="White Bean Basil Chicken Chili" time="70" image="https://images.unsplash.com/photo-1548943487-a2e4f43b4850?auto=format&fit=crop&w=300&q=80" />
+          <RecipeCard title="Veggie & Rice Stir-Fry" time="65" image="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=300&q=80" />
+          <RecipeCard title="Beef Tacos" time="30" image="https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?auto=format&fit=crop&w=300&q=80" />
+        </HorizontalScroll>
+      </section>
+
+      {/* Cuisines */}
+      <section style={{ marginBottom: '32px' }}>
+        <h3 style={{ padding: '0 20px', fontSize: '20px', marginBottom: '16px' }}>Cuisines</h3>
+        <HorizontalScroll>
+          {cuisines.map(c => (
+            <div key={c.name} style={{
+              width: '100px',
+              height: '100px',
+              borderRadius: '50%',
+              overflow: 'hidden',
+              position: 'relative',
+              cursor: 'pointer',
+              boxShadow: 'var(--shadow)',
+              flexShrink: 0
+            }}>
+              <div style={{
+                width: '100%',
+                height: '100%',
+                backgroundImage: `url(${c.image})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }} />
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <span style={{ 
+                  color: 'white', 
+                  fontWeight: '700', 
+                  fontFamily: 'var(--heading)',
+                  fontSize: '14px',
+                  textShadow: '0 2px 4px rgba(0,0,0,0.5)'
+                }}>
+                  {c.name}
+                </span>
+              </div>
+            </div>
+          ))}
+        </HorizontalScroll>
+      </section>
+
+      {/* My Recipe Book */}
+      <section style={{ marginBottom: '32px' }}>
+        <h3 style={{ padding: '0 20px', fontSize: '20px', marginBottom: '16px' }}>My Recipe Book</h3>
+        <HorizontalScroll>
+          <RecipeCard isBookLink onClick={() => console.log('Go to book')} />
+          <RecipeCard title="Chili Eggs on Avocado Toast" time="15" image="https://images.unsplash.com/photo-1482049016688-2d3e1b311543?auto=format&fit=crop&w=300&q=80" />
+          <RecipeCard title="Pancakes with Syrup" time="20" image="https://images.unsplash.com/photo-1528207776546-365bb710ee93?auto=format&fit=crop&w=300&q=80" />
+          <RecipeCard title="Lebanese Fattoush Salad" time="20" image="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=300&q=80" />
+        </HorizontalScroll>
+      </section>
+    </div>
+  );
+};
+
+export default Home;

@@ -1,4 +1,13 @@
 1. (LowFi) Search, Filter and Select Recipe:
 https://www.figma.com/design/AOUfZZYXj7EC1kIUSG47HH/HCI-Project?node-id=0-1&p=f&t=zfWV2ApnxM2K38Qd-11
 
+2. (LowFi) Recipe Overview
+https://www.figma.com/design/AOUfZZYXj7EC1kIUSG47HH/HCI-Project?node-id=0-1&p=f&t=ec8nhZ2o0hSVU6g7-11
+
+2. (LowFi) Live Cooking Mode
+https://www.figma.com/design/AOUfZZYXj7EC1kIUSG47HH/HCI-Project?node-id=0-1&p=f&t=ec8nhZ2o0hSVU6g7-11
+
+3. (LowFi) Save Recipe
+https://www.figma.com/design/AOUfZZYXj7EC1kIUSG47HH/HCI-Project?node-id=0-1&p=f&t=ec8nhZ2o0hSVU6g7-11
+
 
