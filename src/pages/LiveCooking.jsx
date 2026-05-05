@@ -154,12 +154,6 @@ const LiveCooking = () => {
       return;
     }
 
-    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    if (isSafari) {
-      setVoiceSupported(false);
-      return;
-    }
-
     const recognition = new SpeechRecognition();
     recognition.continuous = false;
     recognition.interimResults = false;
@@ -280,7 +274,28 @@ const LiveCooking = () => {
     speakStep();
   }, [currentStepIndex, voiceSupported, voiceOutputEnabled]);
 
-  const toggleVoiceListening = () => {
+  const toggleVoiceListening = async () => {
+    // 1. Force Speech Synthesis Unlock on user interaction
+    if (!voiceOutputEnabled) {
+       const unlockUtterance = new SpeechSynthesisUtterance('');
+       unlockUtterance.volume = 0;
+       window.speechSynthesis.speak(unlockUtterance);
+    }
+
+    // 2. Force Microphone Permission Prompt using getUserMedia
+    if (!voiceEnabled) {
+      try {
+        // This forces Safari to ask for permission if it hasn't already
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Stop the explicit stream immediately, we just needed the permission granted
+        stream.getTracks().forEach(track => track.stop());
+      } catch (err) {
+        console.error("Microphone permission denied or failed:", err);
+        // If permission is denied, don't enable voice
+        return;
+      }
+    }
+
     setVoiceEnabled(prev => {
       const nextValue = !prev;
       if (!nextValue) {
@@ -292,6 +307,19 @@ const LiveCooking = () => {
         recognitionRef.current?.abort();
       } else {
         recognitionRef.current?.start?.();
+      }
+      return nextValue;
+    });
+  };
+
+  const handleVoiceOutputToggle = () => {
+    setVoiceOutputEnabled(prev => {
+      const nextValue = !prev;
+      if (nextValue) {
+        // Unlock speech synthesis on user interaction
+        const unlockUtterance = new SpeechSynthesisUtterance('');
+        unlockUtterance.volume = 0;
+        window.speechSynthesis.speak(unlockUtterance);
       }
       return nextValue;
     });
@@ -343,7 +371,7 @@ const LiveCooking = () => {
             </button>
 
             <button
-              onClick={() => setVoiceOutputEnabled(prev => !prev)}
+              onClick={handleVoiceOutputToggle}
               aria-pressed={voiceOutputEnabled}
               aria-label={voiceOutputEnabled ? 'Turn voice over off' : 'Turn voice over on'}
               style={{

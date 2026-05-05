@@ -76,12 +76,6 @@ const SaveRecipe = () => {
       return;
     }
 
-    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    if (isSafari) {
-      setVoiceSupported(false);
-      return;
-    }
-
     const recognition = new SpeechRecognition();
     recognition.continuous = false;
     recognition.interimResults = false;
@@ -159,7 +153,28 @@ const SaveRecipe = () => {
     };
   }, [voiceEnabled, modifications, selectedModifications, voiceOutputEnabled]);
 
-  const toggleVoiceListening = () => {
+  const toggleVoiceListening = async () => {
+    // 1. Force Speech Synthesis Unlock on user interaction
+    if (!voiceOutputEnabled) {
+       const unlockUtterance = new SpeechSynthesisUtterance('');
+       unlockUtterance.volume = 0;
+       window.speechSynthesis.speak(unlockUtterance);
+    }
+
+    // 2. Force Microphone Permission Prompt using getUserMedia
+    if (!voiceEnabled) {
+      try {
+        // This forces Safari to ask for permission if it hasn't already
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Stop the explicit stream immediately, we just needed the permission granted
+        stream.getTracks().forEach(track => track.stop());
+      } catch (err) {
+        console.error("Microphone permission denied or failed:", err);
+        // If permission is denied, don't enable voice
+        return;
+      }
+    }
+
     setVoiceEnabled(prev => {
       const nextValue = !prev;
       if (!nextValue) {
@@ -171,6 +186,19 @@ const SaveRecipe = () => {
         recognitionRef.current?.abort();
       } else {
         recognitionRef.current?.start?.();
+      }
+      return nextValue;
+    });
+  };
+
+  const handleVoiceOutputToggle = () => {
+    setVoiceOutputEnabled(prev => {
+      const nextValue = !prev;
+      if (nextValue) {
+        // Unlock speech synthesis on user interaction
+        const unlockUtterance = new SpeechSynthesisUtterance('');
+        unlockUtterance.volume = 0;
+        window.speechSynthesis.speak(unlockUtterance);
       }
       return nextValue;
     });
@@ -240,7 +268,7 @@ const SaveRecipe = () => {
             {voiceEnabled ? <Mic size={18} color="var(--accent-green)" /> : <MicOff size={18} color="var(--text-light)" />}
           </button>
           <button
-            onClick={() => setVoiceOutputEnabled(prev => !prev)}
+            onClick={handleVoiceOutputToggle}
             style={{
               width: '36px',
               height: '36px',
