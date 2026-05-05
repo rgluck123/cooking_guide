@@ -36,7 +36,7 @@ const cookingSteps = [
 const RecipeOverview = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { savedRecipes, saveRecipe, deleteRecipe } = useRecipes();
+  const { savedRecipes, saveRecipe, deleteRecipe, clearProgress } = useRecipes();
   const [ingredients, setIngredients] = useState(initialIngredients);
   const nextIngredientIdRef = useRef(initialIngredients.length + 1);
   const nextIngredientPositionRef = useRef(initialIngredients.length + 1);
@@ -332,6 +332,28 @@ const RecipeOverview = () => {
             ))}
           </div>
         </div>
+
+        {/* Notes Section */}
+        <div style={{ marginTop: '48px', marginBottom: '24px' }}>
+          <h2 style={{ fontSize: '20px', margin: '0 0 16px 0' }}>Notes</h2>
+          <textarea
+            placeholder="Add personal notes, substitutions, or tips here..."
+            style={{
+              width: '100%',
+              padding: '16px',
+              borderRadius: '16px',
+              border: '1px solid var(--border)',
+              backgroundColor: 'var(--surface)',
+              color: 'var(--text)',
+              fontFamily: 'var(--sans)',
+              fontSize: '15px',
+              minHeight: '120px',
+              resize: 'none',
+              boxSizing: 'border-box',
+              outline: 'none'
+            }}
+          />
+        </div>
       </div>
 
       {/* Bottom Floating Action */}
@@ -345,7 +367,10 @@ const RecipeOverview = () => {
         zIndex: 50
       }}>
         <button 
-          onClick={() => navigate('/live-cooking')}
+          onClick={() => {
+            clearProgress(recipeBookId);
+            navigate('/live-cooking');
+          }}
           style={{
             width: '100%',
             backgroundColor: 'var(--accent-green)',

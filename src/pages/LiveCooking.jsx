@@ -175,8 +175,8 @@ const LiveCooking = () => {
       const transcript = event.results[0][0].transcript.toLowerCase().trim();
       console.log('Voice Command:', transcript);
       
-      // NEXT STEP
-      if (/(next step|next|done|ok done|next step please|go ahead|next screen|go further|i am ready|all done)/i.test(transcript)) {
+      // NEXT STEP / FINISH
+      if (/(next step|next|done|ok done|next step please|go ahead|next screen|go further|i am ready|all done|finish)/i.test(transcript)) {
         nextStep();
       }
       // PREVIOUS STEP / CLOSE TEMPORARY VIEW
@@ -233,9 +233,9 @@ const LiveCooking = () => {
         speakStep();
       }
       // CONFIRM (Yes)
-      else if (/^yes$/i.test(transcript)) {
+      else if (/(yes( i want)?|sure|yeah|yep|save it)/i.test(transcript)) {
         if (showSavePrompt) {
-          // If save prompt is open, "Yes" triggers save navigation
+          clearProgress(recipeId);
           addRecent({
             id: 'lebanese-spicy-chicken',
             name: 'Lebanese Spicy Chicken',
@@ -247,12 +247,19 @@ const LiveCooking = () => {
           navigate('/save-recipe', { state: { modifications } });
         }
       }
+      // REJECT (No)
+      else if (/(no( i don'?t)?|nope|cancel|don'?t save)/i.test(transcript)) {
+        if (showSavePrompt) {
+          clearProgress(recipeId);
+          setShowSavePrompt(false);
+          navigate('/');
+        }
+      }
       // SAVE RECIPE
       else if (/save recipe/i.test(transcript)) {
         if (isLastStep) {
           setShowSavePrompt(true);
         } else {
-          // Maybe just go to save prompt anyway? The user might want to save early.
           setShowSavePrompt(true);
         }
       }
@@ -619,6 +626,8 @@ const LiveCooking = () => {
             <div style={{ display: 'flex', gap: '16px', flexDirection: 'column' }}>
               <button 
                 onClick={() => {
+                  // Clear progress when saving the finished recipe
+                  clearProgress(recipeId);
                   // Add to recents when opening save screen
                   addRecent({
                     id: 'lebanese-spicy-chicken',
@@ -646,6 +655,8 @@ const LiveCooking = () => {
               </button>
               <button 
                 onClick={() => {
+                  // Clear progress if rejecting the save
+                  clearProgress(recipeId);
                   setShowSavePrompt(false);
                   navigate('/');
                 }}

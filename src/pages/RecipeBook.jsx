@@ -25,8 +25,7 @@ const RecipeBook = () => {
       {/* Header */}
       <header style={{
         padding: 'calc(24px + env(safe-area-inset-top)) 20px 12px',
-        backgroundColor: 'var(--surface)',
-        borderBottom: '1px solid var(--border)',
+        backgroundColor: 'var(--bg)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'flex-start',
@@ -38,28 +37,25 @@ const RecipeBook = () => {
           onClick={() => navigate('/')}
           aria-label="Back to home"
           style={{
-            width: '44px',
-            height: '44px',
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: '50%',
+            background: 'none',
+            border: 'none',
             cursor: 'pointer',
-            padding: 0,
+            padding: '8px',
+            marginRight: '8px',
             color: 'var(--text)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: 'var(--shadow)',
             flexShrink: 0
           }}
         >
-          <ChevronLeft size={24} />
+          <ChevronLeft size={28} />
         </button>
         <h1 style={{
-          fontSize: '20px',
+          fontSize: '24px',
           fontWeight: '700',
           color: 'var(--text)',
-          margin: '0 0 0 12px',
+          margin: 0,
           fontFamily: 'var(--heading)'
         }}>
           Recipe Book

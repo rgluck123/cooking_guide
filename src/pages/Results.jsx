@@ -58,7 +58,7 @@ const Results = () => {
           <Search size={20} color="var(--text-light)" />
           <input
             type="text"
-            placeholder="Filter by name..."
+            placeholder="Search recipes..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{

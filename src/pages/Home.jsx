@@ -9,24 +9,6 @@ const Home = () => {
   const navigate = useNavigate();
   const { savedRecipes, recentRecipes, recipeProgress } = useRecipes();
 
-  const handleSearchClick = () => {
-    // Potentially open full search or just navigate to results
-  };
-
-  const handleRecipeClick = (recipeId) => {
-    if (recipeId === 'lebanese-spicy-chicken') {
-      const progress = recipeProgress[recipeId];
-      // Only resume if user has actually moved past the first step
-      if (progress && progress.currentStep > 0) {
-        navigate('/live-cooking');
-      } else {
-        navigate(`/recipe/${recipeId}`);
-      }
-    } else {
-      navigate('/under-construction');
-    }
-  };
-
   const cuisines = [
     { name: 'Italian', image: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=200&q=80' },
     { name: 'Lebanese', image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=200&q=80' },
@@ -37,8 +19,6 @@ const Home = () => {
 
   const renderRecentSection = () => {
     const hasRecents = recentRecipes.length > 0;
-    // Check if any recipe has progress
-    const recipesWithProgress = Object.keys(recipeProgress).filter(id => recipeProgress[id].currentStep > 0);
     
     // Combine recents and recipes with progress for the first carousel
     // For simplicity in this prototype, we'll just prioritize recipes with progress
@@ -49,16 +29,20 @@ const Home = () => {
       { id: '4', name: 'Beef Tacos', time: '30', image: 'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?auto=format&fit=crop&w=300&q=80' }
     ];
 
+    // Determine section title based on if any display recipe is actively in progress
+    const anyInProgress = displayRecipes.some(r => recipeProgress[r.id] && recipeProgress[r.id].currentStep > 0);
+
     return (
       <section style={{ marginBottom: '32px' }}>
         <h3 style={{ padding: '0 20px', fontSize: '20px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {hasRecents ? <Clock size={20} /> : null}
-          {hasRecents ? 'Recently Cooked' : 'Recent Recipes'}
+          {hasRecents || anyInProgress ? <Clock size={20} /> : null}
+          {anyInProgress ? 'Continue Cooking' : 'Recent Recipes'}
         </h3>
         <HorizontalScroll gap="8px">
           {displayRecipes.map((recipe) => {
             const progress = recipeProgress[recipe.id];
-            const percent = progress ? Math.round((progress.currentStep / (progress.totalSteps - 1)) * 100) : null;
+            const hasProgress = progress && progress.currentStep > 0;
+            const percent = hasProgress ? Math.round((progress.currentStep / (progress.totalSteps - 1)) * 100) : null;
             
             return (
               <RecipeCard 
@@ -67,7 +51,17 @@ const Home = () => {
                 time={recipe.time.toString().replace(' mins', '')} 
                 image={recipe.image} 
                 progress={percent}
-                onClick={() => handleRecipeClick(recipe.id)} 
+                onClick={() => {
+                  if (recipe.id === 'lebanese-spicy-chicken') {
+                    if (hasProgress) {
+                      navigate('/live-cooking');
+                    } else {
+                      navigate(`/recipe/${recipe.id}`);
+                    }
+                  } else {
+                    navigate('/under-construction');
+                  }
+                }} 
               />
             );
           })}
@@ -108,7 +102,7 @@ const Home = () => {
             placeholder="Search recipes..." 
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
-                navigate('/under-construction');
+                navigate('/results', { state: { query: e.currentTarget.value } });
               }
             }}
             style={{ 
@@ -152,7 +146,13 @@ const Home = () => {
         <h3 style={{ padding: '0 20px', fontSize: '20px', marginBottom: '16px' }}>Cuisines</h3>
         <HorizontalScroll>
           {cuisines.map(c => (
-            <div key={c.name} onClick={() => navigate('/under-construction')} style={{
+            <div key={c.name} onClick={() => {
+              if (c.name === 'Lebanese') {
+                navigate('/results', { state: { query: 'Lebanese' } });
+              } else {
+                navigate('/under-construction');
+              }
+            }} style={{
               width: '100px',
               height: '100px',
               borderRadius: '50%',
