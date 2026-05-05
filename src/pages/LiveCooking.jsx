@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home, ChevronLeft, Pencil } from 'lucide-react';
+import { useRecipes } from '../context/RecipeContext';
 import CookingTimer from '../components/CookingTimer';
 
 const cookingSteps = [
@@ -89,12 +90,18 @@ const cookingSteps = [
 
 const LiveCooking = () => {
   const navigate = useNavigate();
+  const { addRecent } = useRecipes();
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isModifyModalOpen, setIsModifyModalOpen] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [modifications, setModifications] = useState([]);
   const [modifyInput, setModifyInput] = useState({ name: '', amount: '', notes: '' });
+  const [isListening, setIsListening] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState(true);
+  const recognitionRef = useRef(null);
+  const loopTimeoutRef = useRef(null);
 
   const step = cookingSteps[currentStepIndex] || cookingSteps[0];
   const isFirstStep = currentStepIndex === 0;
@@ -110,6 +117,80 @@ const LiveCooking = () => {
   };
   const prevStep = () => !isFirstStep && setCurrentStepIndex(prev => prev - 1);
 
+  // Voice interaction setup - auto-listening in cooking mode
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setVoiceSupported(false);
+      return;
+    }
+
+    // Check if Safari (doesn't support webkitSpeechRecognition reliably)
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    if (isSafari) {
+      setVoiceSupported(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => {
+      setIsListening(false);
+      // Loop: restart listening after 500ms
+      if (voiceEnabled) {
+        loopTimeoutRef.current = setTimeout(() => {
+          if (recognitionRef.current && voiceEnabled) {
+            recognitionRef.current.start();
+          }
+        }, 500);
+      }
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript.toLowerCase().trim();
+      
+      if (transcript.includes('next')) {
+        nextStep();
+      } else if (transcript.includes('previous') || transcript.includes('prev')) {
+        prevStep();
+      } else if (transcript.includes('back')) {
+        navigate('/');
+      }
+    };
+
+    recognitionRef.current = recognition;
+
+    // Auto-start on mount
+    setVoiceEnabled(true);
+    recognition.start();
+
+    return () => {
+      if (loopTimeoutRef.current) clearTimeout(loopTimeoutRef.current);
+      recognition.abort();
+    };
+  }, []);
+
+  // Speak step instructions when step changes
+  useEffect(() => {
+    if (!voiceSupported) return;
+
+    const utterance = new SpeechSynthesisUtterance(`${step.title}. ${step.instruction}`);
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  }, [currentStepIndex, voiceSupported]);
+
+  const toggleVoice = () => {
+    // Removed - voice always on in cooking mode
+  };
+
   // Swipe handling
   let touchStartX = 0;
   const handleTouchStart = (e) => touchStartX = e.touches[0].clientX;
@@ -122,7 +203,7 @@ const LiveCooking = () => {
 
   return (
     <div 
-      style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', display: 'flex', flexDirection: 'column' }}
+      style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', display: 'flex', flexDirection: 'column', paddingBottom: 'env(safe-area-inset-bottom)' }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
@@ -362,6 +443,14 @@ const LiveCooking = () => {
             <div style={{ display: 'flex', gap: '16px', flexDirection: 'column' }}>
               <button 
                 onClick={() => {
+                  // Add to recents when opening save screen
+                  addRecent({
+                    id: 'lebanese-spicy-chicken',
+                    name: 'Lebanese Spicy Chicken',
+                    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=80',
+                    time: '40 mins',
+                    portions: '2 portions'
+                  });
                   setShowSavePrompt(false);
                   navigate('/save-recipe', { state: { modifications } });
                 }}

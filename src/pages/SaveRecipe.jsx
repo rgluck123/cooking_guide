@@ -10,21 +10,26 @@ const SaveRecipe = () => {
   const [recipeName, setRecipeName] = useState('Lebanese Spicy Chicken');
   const [notes, setNotes] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
-  const [removedModifications, setRemovedModifications] = useState({});
+  const [selectedModifications, setSelectedModifications] = useState(new Set());
 
   // Get modifications from navigation state
   const modifications = location.state?.modifications || [];
 
-  const toggleRemoveModification = (id) => {
-    setRemovedModifications(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
+  const toggleSelectModification = (id) => {
+    setSelectedModifications(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
   };
 
   const handleSaveRecipe = () => {
-    // Filter out removed modifications
-    const activeModifications = modifications.filter(mod => !removedModifications[mod.id]);
+    // Keep only selected modifications
+    const activeModifications = modifications.filter(mod => selectedModifications.has(mod.id));
     
     const recipeData = {
       name: recipeName,
@@ -50,7 +55,8 @@ const SaveRecipe = () => {
       minHeight: '100vh', 
       backgroundColor: 'var(--bg)',
       maxWidth: '480px',
-      margin: '0 auto'
+      margin: '0 auto',
+      paddingBottom: 'env(safe-area-inset-bottom)'
     }}>
       {/* Header */}
       <header style={{ 
@@ -188,45 +194,53 @@ const SaveRecipe = () => {
               Modifications
             </h3>
             
-            {modifications.map((mod) => (
-              <div key={mod.id} style={{ marginBottom: '12px' }}>
-                <div style={{ 
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  fontSize: '14px',
-                  color: removedModifications[mod.id] ? 'var(--text-light)' : 'var(--text)',
-                  paddingBottom: '8px',
-                  borderBottom: '1px dashed var(--border)',
-                  opacity: removedModifications[mod.id] ? 0.5 : 1,
-                  textDecoration: removedModifications[mod.id] ? 'line-through' : 'none'
-                }}>
-                  <span style={{ fontWeight: '500', flex: 1 }}>
-                    {mod.name && mod.amount && `${mod.name} (${mod.amount})`}
-                    {mod.name && !mod.amount && mod.name}
-                    {!mod.name && mod.amount && `Added: ${mod.amount}`}
-                    {mod.notes && ` - ${mod.notes}`}
-                  </span>
-                  <button 
-                    onClick={() => toggleRemoveModification(mod.id)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: removedModifications[mod.id] ? 'var(--text-light)' : 'var(--accent-orange)',
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      padding: '0',
-                      textDecoration: removedModifications[mod.id] ? 'line-through' : 'none',
-                      marginLeft: '12px',
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    {removedModifications[mod.id] ? 'Removed' : 'Remove'}
-                  </button>
+            {modifications.map((mod) => {
+              const isSelected = selectedModifications.has(mod.id);
+              return (
+                <div key={mod.id} style={{ marginBottom: '0' }}>
+                  <div style={{ 
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px',
+                    paddingBottom: '12px',
+                    borderBottom: '1px dotted var(--border)',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => toggleSelectModification(mod.id)}>
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => {}}
+                      style={{
+                        marginTop: '4px',
+                        cursor: 'pointer',
+                        accentColor: 'var(--accent-green)'
+                      }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ 
+                        fontSize: '14px',
+                        color: isSelected ? 'var(--text)' : 'var(--text-light)',
+                        fontWeight: isSelected ? '500' : '400'
+                      }}>
+                        {mod.name && mod.amount && `${mod.name} (${mod.amount})`}
+                        {mod.name && !mod.amount && mod.name}
+                        {!mod.name && mod.amount && `Added: ${mod.amount}`}
+                      </div>
+                      {mod.notes && (
+                        <div style={{
+                          fontSize: '12px',
+                          color: 'var(--text-light)',
+                          marginTop: '2px'
+                        }}>
+                          {mod.notes}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

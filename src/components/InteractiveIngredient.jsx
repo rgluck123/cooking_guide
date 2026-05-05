@@ -164,11 +164,10 @@ const InteractiveIngredient = ({ item, onSwipeLeft, onSwipeRight, onLongPress })
             <div style={{ 
               fontSize: '16px', 
               fontWeight: '600', 
-              color: isChecked ? 'var(--text-light)' : 'var(--text)',
-              textDecoration: isChecked ? 'line-through' : 'none'
+              color: isChecked ? 'var(--text-light)' : 'var(--text)'
             }}>
               {item.name}
-              {item.edited && <span style={{ fontSize: '12px', color: 'var(--accent-orange)', marginLeft: '8px', fontStyle: 'italic', textDecoration: 'none' }}>(edited)</span>}
+              {item.edited && <span style={{ fontSize: '12px', color: 'var(--accent-orange)', marginLeft: '8px', fontStyle: 'italic' }}>(edited)</span>}
             </div>
             {item.originalName !== item.name && (
               <div style={{ fontSize: '12px', color: 'var(--text-light)', marginTop: '2px' }}>
@@ -177,7 +176,7 @@ const InteractiveIngredient = ({ item, onSwipeLeft, onSwipeRight, onLongPress })
             )}
           </div>
         </div>
-        <div style={{ fontWeight: '700', color: isChecked ? 'var(--text-light)' : 'var(--accent-green)', textDecoration: isChecked ? 'line-through' : 'none' }}>
+        <div style={{ fontWeight: '700', color: isChecked ? 'var(--text-light)' : 'var(--accent-green)' }}>
           {item.quantity}
         </div>
       </div>

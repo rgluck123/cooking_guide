@@ -13,7 +13,7 @@ const BottomNav = () => {
   const navItems = [
     { name: 'Home', path: '/', icon: <Home size={24} /> },
     { name: 'Search', path: '/results', icon: <Search size={24} /> },
-    { name: 'My Book', path: '#', icon: <BookOpen size={24} /> },
+    { name: 'My Book', path: '/recipe-book', icon: <BookOpen size={24} /> },
     { name: 'Profile', path: '#', icon: <User size={24} /> }
   ];
 
@@ -26,7 +26,7 @@ const BottomNav = () => {
       borderTop: '1px solid var(--border)',
       display: 'flex',
       justifyContent: 'space-around',
-      padding: '12px 0 calc(12px + env(safe-area-inset-bottom))',
+      padding: '16px 0 calc(24px + env(safe-area-inset-bottom))',
       zIndex: 50,
       boxShadow: '0 -4px 12px rgba(0,0,0,0.03)',
       marginTop: 'auto'

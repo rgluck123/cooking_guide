@@ -1,0 +1,32 @@
+{
+  "name": "Cooking Guide",
+  "short_name": "Cook Guide",
+  "description": "Your interactive cooking companion with step-by-step recipes",
+  "start_url": "/cooking_guide/",
+  "scope": "/cooking_guide/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FAFAF8",
+  "theme_color": "#4A6B44",
+  "icons": [
+    {
+      "src": "/cooking_guide/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/cooking_guide/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/cooking_guide/favicon.svg",
+      "sizes": "540x720",
+      "form_factor": "narrow"
+    }
+  ]
+}

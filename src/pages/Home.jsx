@@ -1,13 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, SlidersHorizontal, User } from 'lucide-react';
+import { Search, SlidersHorizontal, User, Clock } from 'lucide-react';
 import HorizontalScroll from '../components/HorizontalScroll';
 import RecipeCard from '../components/RecipeCard';
 import { useRecipes } from '../context/RecipeContext';
 
 const Home = () => {
   const navigate = useNavigate();
-  const { savedRecipes } = useRecipes();
+  const { savedRecipes, recentRecipes } = useRecipes();
 
   const handleSearchClick = () => {
     // Potentially open full search or just navigate to results
@@ -22,9 +22,9 @@ const Home = () => {
   ];
 
   return (
-    <div style={{ paddingBottom: '90px' }}>
+    <div style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}>
       {/* Header */}
-      <header style={{ padding: 'calc(24px + env(safe-area-inset-top)) 20px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header style={{ padding: 'calc(32px + env(safe-area-inset-top)) 20px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '800', color: 'var(--accent-green)' }}>Cooking Guide</h1>
         <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--accent-green-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
           <User size={20} color="var(--accent-green)" />
@@ -32,7 +32,7 @@ const Home = () => {
       </header>
 
       {/* Search and Filter */}
-      <div style={{ padding: '0 20px 24px', display: 'flex', gap: '12px' }}>
+      <div style={{ padding: '0 20px 20px', display: 'flex', gap: '12px' }}>
         <div style={{ 
           flex: 1, 
           display: 'flex', 
@@ -145,11 +145,31 @@ const Home = () => {
         </HorizontalScroll>
       </section>
 
+      {/* Recents */}
+      {recentRecipes.length > 0 && (
+        <section style={{ marginBottom: '32px' }}>
+          <h3 style={{ padding: '0 20px', fontSize: '20px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Clock size={20} /> Recently Cooked
+          </h3>
+          <HorizontalScroll gap="8px">
+            {recentRecipes.map((recipe) => (
+              <RecipeCard 
+                key={recipe.id}
+                title={recipe.name} 
+                time={recipe.time.replace(' mins', '')} 
+                image={recipe.image} 
+                onClick={() => navigate(`/recipe/${recipe.id}`)} 
+              />
+            ))}
+          </HorizontalScroll>
+        </section>
+      )}
+
       {/* My Recipe Book */}
       <section style={{ marginBottom: '32px' }}>
         <h3 style={{ padding: '0 20px', fontSize: '20px', marginBottom: '16px' }}>My Recipe Book</h3>
         <HorizontalScroll gap="8px">
-          <RecipeCard isBookLink onClick={() => console.log('Go to book')} />
+          <RecipeCard isBookLink onClick={() => navigate('/recipe-book')} />
           {savedRecipes.length > 0 ? (
             savedRecipes.map((recipe) => (
               <RecipeCard 
@@ -157,7 +177,7 @@ const Home = () => {
                 title={recipe.name} 
                 time={recipe.time.replace(' mins', '')} 
                 image={recipe.image} 
-                onClick={() => console.log('View recipe:', recipe.id)} 
+                onClick={() => navigate(`/recipe/${recipe.id}`)} 
               />
             ))
           ) : (

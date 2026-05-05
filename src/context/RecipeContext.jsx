@@ -4,6 +4,7 @@ const RecipeContext = createContext();
 
 export const RecipeProvider = ({ children }) => {
   const [savedRecipes, setSavedRecipes] = useState([]);
+  const [recentRecipes, setRecentRecipes] = useState([]);
 
   // Load recipes from localStorage on mount
   useEffect(() => {
@@ -11,12 +12,20 @@ export const RecipeProvider = ({ children }) => {
     if (stored) {
       setSavedRecipes(JSON.parse(stored));
     }
+    const recentStored = localStorage.getItem('recentRecipes');
+    if (recentStored) {
+      setRecentRecipes(JSON.parse(recentStored));
+    }
   }, []);
 
   // Save recipes to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes));
   }, [savedRecipes]);
+
+  useEffect(() => {
+    localStorage.setItem('recentRecipes', JSON.stringify(recentRecipes));
+  }, [recentRecipes]);
 
   const saveRecipe = (recipe) => {
     const newRecipe = {
@@ -28,6 +37,13 @@ export const RecipeProvider = ({ children }) => {
     return newRecipe.id;
   };
 
+  const addRecent = (recipe) => {
+    setRecentRecipes(prev => {
+      const filtered = prev.filter(r => r.id !== recipe.id);
+      return [recipe, ...filtered].slice(0, 10); // Keep last 10 recents
+    });
+  };
+
   const deleteRecipe = (recipeId) => {
     setSavedRecipes(prev => prev.filter(r => r.id !== recipeId));
   };
@@ -37,7 +53,14 @@ export const RecipeProvider = ({ children }) => {
   };
 
   return (
-    <RecipeContext.Provider value={{ savedRecipes, saveRecipe, deleteRecipe, getRecipeById }}>
+    <RecipeContext.Provider value={{ 
+      savedRecipes, 
+      recentRecipes,
+      saveRecipe, 
+      addRecent,
+      deleteRecipe, 
+      getRecipeById 
+    }}>
       {children}
     </RecipeContext.Provider>
   );

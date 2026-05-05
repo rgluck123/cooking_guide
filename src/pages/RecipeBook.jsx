@@ -1,78 +1,258 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Trash2, Clock } from 'lucide-react';
-import RecipeCard from '../components/RecipeCard';
+import { ChevronLeft, Trash2 } from 'lucide-react';
+import { useRecipes } from '../context/RecipeContext';
 
 const RecipeBook = () => {
   const navigate = useNavigate();
-  const [savedRecipes, setSavedRecipes] = useState([
-    { id: 1, title: 'Lebanese Spicy Chicken', time: '45', image: 'https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?auto=format&fit=crop&w=400&q=80' },
-    { id: 2, title: 'White Bean Basil Chicken Chili', time: '70', image: 'https://images.unsplash.com/photo-1552611052-33e04de081de?auto=format&fit=crop&w=400&q=80' },
-    { id: 3, title: 'Veggie & Rice Stir-Fry', time: '65', image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=400&q=80' }
-  ]);
+  const { savedRecipes, deleteRecipe } = useRecipes();
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  const removeRecipe = (id, e) => {
-    e.stopPropagation();
-    setSavedRecipes(prev => prev.filter(r => r.id !== id));
+  const handleDeleteRecipe = (recipeId) => {
+    deleteRecipe(recipeId);
+    setDeleteConfirm(null);
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', paddingBottom: '40px' }}>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: '100vh',
+      backgroundColor: 'var(--bg)',
+      maxWidth: '480px',
+      margin: '0 auto'
+    }}>
       {/* Header */}
-      <header style={{ display: 'flex', alignItems: 'center', padding: '24px 20px', position: 'sticky', top: 0, backgroundColor: 'var(--bg)', zIndex: 10 }}>
-        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <ChevronLeft size={28} color="var(--text)" />
+      <header style={{
+        padding: 'calc(24px + env(safe-area-inset-top)) 20px 12px',
+        backgroundColor: 'var(--surface)',
+        borderBottom: '1px solid var(--border)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '16px'
+      }}>
+        <button
+          onClick={() => navigate('/')}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '4px',
+            color: 'var(--text)',
+            display: 'flex'
+          }}
+        >
+          <ChevronLeft size={24} />
         </button>
-        <h1 style={{ flex: 1, textAlign: 'center', fontSize: '24px', fontWeight: '700', marginRight: '44px' }}>
-          My Recipe Book
+        <h1 style={{
+          fontSize: '20px',
+          fontWeight: '700',
+          color: 'var(--text)',
+          margin: 0,
+          fontFamily: 'var(--heading)'
+        }}>
+          Recipe Book
         </h1>
       </header>
 
-      {/* Grid */}
-      <div style={{ 
-        padding: '0 20px', 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', 
-        gap: '24px 16px',
-        justifyItems: 'center'
-      }}>
-        {savedRecipes.map((r) => (
-          <div key={r.id} style={{ position: 'relative' }}>
-            <RecipeCard 
-              title={r.title} 
-              time={r.time} 
-              image={r.image} 
-              onClick={() => navigate(`/recipe/${r.id}`)}
-            />
-            <button 
-              onClick={(e) => removeRecipe(r.id, e)}
-              style={{
-                position: 'absolute',
-                top: '-8px',
-                right: '-8px',
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                backgroundColor: '#ef4444',
-                color: 'white',
-                border: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                zIndex: 5,
-                cursor: 'pointer'
-              }}
-            >
-              <Trash2 size={16} />
-            </button>
+      {/* Main Content */}
+      <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
+        {savedRecipes.length === 0 ? (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '300px',
+            textAlign: 'center'
+          }}>
+            <p style={{
+              fontSize: '16px',
+              color: 'var(--text-light)',
+              marginBottom: '12px'
+            }}>
+              No saved recipes yet
+            </p>
+            <p style={{
+              fontSize: '13px',
+              color: 'var(--text-light)'
+            }}>
+              Cook and save a recipe to see it here!
+            </p>
           </div>
-        ))}
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {savedRecipes.map((recipe) => (
+              <div
+                key={recipe.id}
+                style={{
+                  backgroundColor: 'var(--surface)',
+                  borderRadius: '12px',
+                  border: '1px solid var(--border)',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  height: '120px'
+                }}
+              >
+                {/* Recipe Image */}
+                <div style={{
+                  width: '100px',
+                  height: '100%',
+                  overflow: 'hidden',
+                  flexShrink: 0
+                }}>
+                  <img
+                    src={recipe.image}
+                    alt={recipe.name}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                  />
+                </div>
+
+                {/* Recipe Info */}
+                <div style={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  padding: '12px 16px'
+                }}>
+                  <div>
+                    <h3 style={{
+                      fontSize: '15px',
+                      fontWeight: '600',
+                      color: 'var(--text)',
+                      margin: '0 0 4px 0'
+                    }}>
+                      {recipe.name}
+                    </h3>
+                    <p style={{
+                      fontSize: '13px',
+                      color: 'var(--text-light)',
+                      margin: '0'
+                    }}>
+                      ⏱️ {recipe.time} • 👥 {recipe.portions}
+                    </p>
+                  </div>
+                  {recipe.modifications && recipe.modifications.length > 0 && (
+                    <p style={{
+                      fontSize: '12px',
+                      color: 'var(--accent-green)',
+                      margin: '0'
+                    }}>
+                      {recipe.modifications.length} modification{recipe.modifications.length !== 1 ? 's' : ''}
+                    </p>
+                  )}
+                </div>
+
+                {/* Delete Button */}
+                <button
+                  onClick={() => setDeleteConfirm(recipe.id)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: '12px 16px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--text-light)',
+                    transition: 'color 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = 'var(--accent-orange)'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-light)'}
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {savedRecipes.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-light)' }}>
-          <p>Your recipe book is empty.</p>
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: 100,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: 'var(--surface)',
+            borderRadius: '24px',
+            padding: '32px 24px',
+            maxWidth: '480px',
+            width: 'calc(100% - 40px)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            border: '1px solid var(--border)'
+          }}>
+            <h2 style={{
+              fontSize: '20px',
+              fontWeight: '700',
+              color: 'var(--text)',
+              marginTop: 0,
+              marginBottom: '12px',
+              textAlign: 'center'
+            }}>
+              Delete Recipe?
+            </h2>
+            <p style={{
+              fontSize: '15px',
+              color: 'var(--text-light)',
+              lineHeight: '1.6',
+              marginBottom: '32px',
+              textAlign: 'center'
+            }}>
+              This action cannot be undone.
+            </p>
+
+            <div style={{ display: 'flex', gap: '12px', flexDirection: 'column' }}>
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                style={{
+                  width: '100%',
+                  padding: '16px 24px',
+                  backgroundColor: 'white',
+                  color: 'var(--text)',
+                  border: '1.5px solid var(--text)',
+                  borderRadius: '24px',
+                  fontWeight: '600',
+                  fontSize: '16px',
+                  cursor: 'pointer'
+                }}
+              >
+                Keep Recipe
+              </button>
+              <button
+                onClick={() => handleDeleteRecipe(deleteConfirm)}
+                style={{
+                  width: '100%',
+                  padding: '16px 24px',
+                  backgroundColor: 'var(--accent-orange)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '24px',
+                  fontWeight: '600',
+                  fontSize: '16px',
+                  cursor: 'pointer'
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

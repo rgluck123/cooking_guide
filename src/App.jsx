@@ -5,13 +5,14 @@ import Results from './pages/Results';
 import RecipeOverview from './pages/RecipeOverview';
 import LiveCooking from './pages/LiveCooking';
 import SaveRecipe from './pages/SaveRecipe';
+import RecipeBook from './pages/RecipeBook';
 import BottomNav from './components/BottomNav';
 import { RecipeProvider } from './context/RecipeContext';
 import './App.css';
 
 function AppLayout() {
   const location = useLocation();
-  const hideNavRoutes = ['/recipe', '/live-cooking', '/save-recipe'];
+  const hideNavRoutes = ['/recipe', '/live-cooking', '/save-recipe', '/recipe-book'];
   const shouldHideNav = hideNavRoutes.some(route => location.pathname.startsWith(route));
 
   return (
@@ -24,6 +25,7 @@ function AppLayout() {
           <Route path="/recipe/:id" element={<RecipeOverview />} />
           <Route path="/live-cooking" element={<LiveCooking />} />
           <Route path="/save-recipe" element={<SaveRecipe />} />
+          <Route path="/recipe-book" element={<RecipeBook />} />
         </Routes>
       </div>
       {!shouldHideNav && <BottomNav />}
@@ -34,7 +36,7 @@ function AppLayout() {
 function App() {
   return (
     <RecipeProvider>
-      <BrowserRouter basename={import.meta.env.BASE_URL}>
+      <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
         <AppLayout />
       </BrowserRouter>
     </RecipeProvider>
@@ -42,3 +44,6 @@ function App() {
 }
 
 export default App;
+
+
+

@@ -40,19 +40,36 @@ const Filter = () => {
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg)' }}>
-      {/* Header */}
-      <header style={{ display: 'flex', alignItems: 'center', padding: 'calc(24px + env(safe-area-inset-top)) 20px', position: 'sticky', top: 0, backgroundColor: 'var(--bg)', zIndex: 10 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      {/* Header with Apply Button */}
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'calc(16px + env(safe-area-inset-top)) 20px', position: 'sticky', top: 0, backgroundColor: 'var(--bg)', zIndex: 10 }}>
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <ChevronLeft size={28} color="var(--text)" />
         </button>
-        <h1 style={{ flex: 1, textAlign: 'center', fontSize: '24px', fontWeight: '700', marginRight: '44px' }}>
+        <h1 style={{ fontSize: '20px', fontWeight: '700' }}>
           Filter
         </h1>
+        <button
+          onClick={() => navigate('/results')}
+          style={{
+            padding: '10px 20px',
+            backgroundColor: 'var(--accent-green)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '20px',
+            fontSize: '14px',
+            fontWeight: '700',
+            fontFamily: 'var(--heading)',
+            cursor: 'pointer',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          Apply
+        </button>
       </header>
 
       {/* Content */}
-      <div style={{ padding: '0 20px 100px', display: 'flex', flexDirection: 'column', gap: '32px', flex: 1 }}>
+      <div style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: '32px', flex: 1 }}>
         
         {/* Difficulty */}
         <section>
@@ -106,24 +123,30 @@ const Filter = () => {
 
       </div>
 
-      {/* Sticky Bottom Button */}
+      {/* Floating Apply Button Above Nav */}
       <div style={{
-        position: 'sticky',
-        bottom: 0,
-        padding: '20px',
+        position: 'fixed',
+        bottom: 'calc(70px + env(safe-area-inset-bottom))',
+        left: 0,
+        right: 0,
+        padding: '16px 20px',
         backgroundColor: 'var(--bg)',
-        borderTop: '1px solid var(--border)'
+        borderTop: '1px solid var(--border)',
+        zIndex: 40,
+        display: 'flex',
+        justifyContent: 'center'
       }}>
         <button
           onClick={() => navigate('/results')}
           style={{
             width: '100%',
-            padding: '18px',
+            maxWidth: '440px',
+            padding: '16px',
             backgroundColor: 'var(--accent-green)',
             color: 'white',
             border: 'none',
             borderRadius: '24px',
-            fontSize: '18px',
+            fontSize: '16px',
             fontWeight: '700',
             fontFamily: 'var(--heading)',
             cursor: 'pointer',

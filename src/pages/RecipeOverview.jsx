@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Play, Bookmark, Info } from 'lucide-react';
 import InteractiveIngredient from '../components/InteractiveIngredient';
 import SubstituteModal from '../components/SubstituteModal';
@@ -13,8 +13,23 @@ const initialIngredients = [
   { id: 5, name: 'Lemon Juice', quantity: '2 tbsp', originalName: 'Lemon Juice', edited: false },
 ];
 
+const cookingSteps = [
+  { id: 1, title: 'Cook the rice', instruction: 'Rinse 190g white rice and add to a pot with 380ml water. Bring to a boil, then reduce heat and simmer covered for 18-20 minutes until tender.' },
+  { id: 2, title: 'Debone the chicken', instruction: 'Let the cooked chicken cool for a few minutes. Carefully remove all bones and skin, shredding the meat into bite-sized pieces.' },
+  { id: 3, title: 'Cut the onion', instruction: 'Peel 1 yellow onion and cut it into thin slices. Try to keep them roughly the same thickness for even cooking.' },
+  { id: 4, title: 'Heat oil in the pan', instruction: 'Heat oil in a large pan over medium heat and add the chopped onion. Sauté for 2-3 minutes until translucent and fragrant.' },
+  { id: 5, title: 'Add your seasoning', instruction: 'Add a pinch of salt, pepper, and a teaspoon each of cumin, coriander, and cinnamon. Stir well to combine.' },
+  { id: 6, title: 'Stir for 1 minute', instruction: 'Keep stirring the spices with the onions to toast them and release their aroma.' },
+  { id: 7, title: 'Push the chicken thighs in the pan', instruction: 'Carefully add the shredded chicken pieces to the pan and mix well with the spiced onions.' },
+  { id: 8, title: 'Cook for about 8 minutes on each side until they look golden brown and juicy', instruction: 'Allow the chicken to cook through and develop a nice golden color on all sides.' },
+  { id: 9, title: 'Squeeze half a lemon over the chicken to brighten up the ingredients', instruction: 'Drizzle fresh lemon juice over the cooked chicken for added zest and flavor.' },
+  { id: 10, title: 'Cut the other half of the lemon in slices', instruction: 'Slice the remaining lemon half into thin slices for serving.' },
+  { id: 11, title: 'Drain the water from the rice', instruction: 'Separate the rice grains and prepare for serving.' }
+];
+
 const RecipeOverview = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
   const [ingredients, setIngredients] = useState(initialIngredients);
   
   const [isSubModalOpen, setIsSubModalOpen] = useState(false);
@@ -51,7 +66,7 @@ const RecipeOverview = () => {
   };
 
   return (
-    <div style={{ paddingBottom: '100px', backgroundColor: 'var(--bg)', minHeight: '100vh', position: 'relative' }}>
+    <div style={{ paddingBottom: 'calc(100px + env(safe-area-inset-bottom))', backgroundColor: 'var(--bg)', minHeight: '100vh', position: 'relative' }}>
       
       {/* Top Image & Header */}
       <div style={{ position: 'relative', height: '300px' }}>
@@ -95,28 +110,6 @@ const RecipeOverview = () => {
           <div style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', padding: '6px 12px', borderRadius: '16px', fontWeight: '600', fontSize: '14px' }}>4 Portions</div>
         </div>
 
-        {/* Deboning Info Banner */}
-        <div 
-          onClick={() => setIsDeboneModalOpen(true)}
-          style={{
-            backgroundColor: '#e0f2fe', // light blue
-            border: '1px solid #bae6fd',
-            borderRadius: '16px',
-            padding: '16px',
-            marginBottom: '32px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            cursor: 'pointer'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Info size={24} color="#0284c7" />
-            <span style={{ color: '#0369a1', fontWeight: '600' }}>How to debone the chicken?</span>
-          </div>
-          <ChevronLeft size={20} color="#0284c7" style={{ transform: 'rotate(180deg)' }} />
-        </div>
-
         {/* Ingredients */}
         <div>
           <h2 style={{ fontSize: '20px', marginBottom: '16px' }}>Ingredients</h2>
@@ -133,6 +126,50 @@ const RecipeOverview = () => {
                 onSwipeRight={openSubstitute}
                 onLongPress={handleLongPress}
               />
+            ))}
+          </div>
+        </div>
+
+        {/* Steps Overview */}
+        <div style={{ marginTop: '48px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '20px', margin: 0 }}>Steps</h2>
+            <button style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '8px 16px', fontSize: '14px', fontWeight: '600', color: 'var(--text)', cursor: 'pointer' }}>Edit</button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {cookingSteps.map((step) => (
+              <div key={step.id} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', flex: 1 }}>
+                  <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--accent-green)', minWidth: '24px', lineHeight: '1.5' }}>
+                    {step.id}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ margin: '0', fontSize: '15px', fontWeight: '600', color: 'var(--text)', lineHeight: '1.4' }}>
+                      {step.title}
+                    </p>
+                    <div style={{ borderBottom: '1px dotted var(--border)', marginTop: '8px' }} />
+                  </div>
+                </div>
+                {step.id === 2 && (
+                  <button
+                    onClick={() => setIsDeboneModalOpen(true)}
+                    style={{
+                      padding: '6px 12px',
+                      backgroundColor: 'var(--accent-green-light)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      color: 'var(--accent-green)',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      marginLeft: '12px'
+                    }}
+                  >
+                    More info
+                  </button>
+                )}
+              </div>
             ))}
           </div>
         </div>
