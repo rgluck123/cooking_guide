@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, ChevronLeft, Pencil } from 'lucide-react';
+import { Home, Mic, MicOff, Pencil, Volume2, VolumeX } from 'lucide-react';
 import { useRecipes } from '../context/RecipeContext';
 import CookingTimer from '../components/CookingTimer';
 
@@ -90,16 +90,24 @@ const cookingSteps = [
 
 const LiveCooking = () => {
   const navigate = useNavigate();
-  const { addRecent } = useRecipes();
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const { addRecent, liveCookingDefaults, recipeProgress, updateProgress, clearProgress } = useRecipes();
+  const recipeId = 'lebanese-spicy-chicken';
+
+  const [currentStepIndex, setCurrentStepIndex] = useState(() => {
+    const progress = recipeProgress[recipeId];
+    return progress ? progress.currentStep : 0;
+  });
+
   const [isModifyModalOpen, setIsModifyModalOpen] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [modifications, setModifications] = useState([]);
   const [modifyInput, setModifyInput] = useState({ name: '', amount: '', notes: '' });
   const [isListening, setIsListening] = useState(false);
-  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(liveCookingDefaults.micEnabled);
+  const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(liveCookingDefaults.voiceOverEnabled);
   const [voiceSupported, setVoiceSupported] = useState(true);
+  const [timerCommand, setTimerCommand] = useState(null);
   const recognitionRef = useRef(null);
   const loopTimeoutRef = useRef(null);
 
@@ -107,6 +115,17 @@ const LiveCooking = () => {
   const isFirstStep = currentStepIndex === 0;
   const isLastStep = currentStepIndex === cookingSteps.length - 1;
   const progressPercent = ((currentStepIndex + 1) / cookingSteps.length) * 100;
+
+  const handleExit = () => {
+    // Explicitly update progress before navigating
+    updateProgress(recipeId, currentStepIndex, cookingSteps.length);
+    navigate('/');
+  };
+
+  // Automatically update progress when step changes
+  useEffect(() => {
+    updateProgress(recipeId, currentStepIndex, cookingSteps.length);
+  }, [currentStepIndex, recipeId, updateProgress]);
 
   const nextStep = () => {
     if (isLastStep) {
@@ -117,7 +136,17 @@ const LiveCooking = () => {
   };
   const prevStep = () => !isFirstStep && setCurrentStepIndex(prev => prev - 1);
 
-  // Voice interaction setup - auto-listening in cooking mode
+  const speakStep = () => {
+    if (!voiceSupported || !voiceOutputEnabled) return;
+    const utterance = new SpeechSynthesisUtterance(`${step.title}. ${step.instruction}`);
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // Voice interaction setup - microphone is on by default in cooking mode
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -125,7 +154,6 @@ const LiveCooking = () => {
       return;
     }
 
-    // Check if Safari (doesn't support webkitSpeechRecognition reliably)
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     if (isSafari) {
       setVoiceSupported(false);
@@ -140,11 +168,10 @@ const LiveCooking = () => {
     recognition.onstart = () => setIsListening(true);
     recognition.onend = () => {
       setIsListening(false);
-      // Loop: restart listening after 500ms
       if (voiceEnabled) {
         loopTimeoutRef.current = setTimeout(() => {
           if (recognitionRef.current && voiceEnabled) {
-            recognitionRef.current.start();
+            try { recognitionRef.current.start(); } catch(e) {}
           }
         }, 500);
       }
@@ -152,43 +179,122 @@ const LiveCooking = () => {
 
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript.toLowerCase().trim();
+      console.log('Voice Command:', transcript);
       
-      if (transcript.includes('next')) {
+      // NEXT STEP
+      if (/(next step|next|done|ok done|next step please|go ahead|next screen|go further|i am ready|all done)/i.test(transcript)) {
         nextStep();
-      } else if (transcript.includes('previous') || transcript.includes('prev')) {
-        prevStep();
-      } else if (transcript.includes('back')) {
-        navigate('/');
+      }
+      // PREVIOUS STEP / CLOSE TEMPORARY VIEW
+      else if (/(previous step|previous|back|go back|please go back|go back please|last step|last screen)/i.test(transcript)) {
+        if (isModifyModalOpen || isMoreOpen || showSavePrompt) {
+          setIsModifyModalOpen(false);
+          setIsMoreOpen(false);
+          setShowSavePrompt(false);
+        } else {
+          prevStep();
+        }
+      }
+      // HOME SCREEN
+      else if (/(go to (the )?home screen( please)?|home screen|home page|go to (the )?home page( please)?|(please )?go to (the )?home page|(please )?go to (the )?home screen)/i.test(transcript)) {
+        handleExit();
+      }
+      // TIMER CONTROLS
+      else if (/((ok )?(start|launch|set) (the )?timer|start (the )?countdown)/i.test(transcript)) {
+        setTimerCommand({ type: 'start', id: Date.now() });
+      }
+      else if (/((pause|stop|halt) (the )?(timer|time)|pause|stop (the )?time)/i.test(transcript)) {
+        setTimerCommand({ type: 'pause', id: Date.now() });
+      }
+      else if (/reset (the )?(timer|time)/i.test(transcript)) {
+        setTimerCommand({ type: 'reset', id: Date.now() });
+      }
+      // MODIFY
+      else if (/(modify|do modification|put modification)/i.test(transcript)) {
+        setIsModifyModalOpen(true);
+      }
+      // CLOSE / BACK TO RECIPE
+      else if (/(close|go to (the )?(recipe|step))/i.test(transcript)) {
+        setIsModifyModalOpen(false);
+        setIsMoreOpen(false);
+        setShowSavePrompt(false);
+      }
+      // MORE INFO / HELP
+      else if (/(help|more info|more information|more instructions)/i.test(transcript)) {
+        if (step.id === 2) setIsMoreOpen(true);
+      }
+      // SPEECH OUTPUT TOGGLE
+      else if (/(unmute|allow (voice|speech))/i.test(transcript)) {
+        setVoiceOutputEnabled(true);
+      }
+      else if (/(mute|turn off (voice|speech)|disable (voice|speech))/i.test(transcript)) {
+        setVoiceOutputEnabled(false);
+      }
+      // RECIPE OVERVIEW
+      else if (/((show )?recipe overview|show (all )?recipe steps)/i.test(transcript)) {
+        handleExit();
+      }
+      // SAY AGAIN
+      else if (/(again( please)?|(please )?(say )?again|(please )?speak again)/i.test(transcript)) {
+        speakStep();
+      }
+      // CONFIRM (Yes)
+      else if (/^yes$/i.test(transcript)) {
+        if (showSavePrompt) {
+          // If save prompt is open, "Yes" triggers save navigation
+          addRecent({
+            id: 'lebanese-spicy-chicken',
+            name: 'Lebanese Spicy Chicken',
+            image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=80',
+            time: '40 mins',
+            portions: '2 portions'
+          });
+          setShowSavePrompt(false);
+          navigate('/save-recipe', { state: { modifications } });
+        }
+      }
+      // SAVE RECIPE
+      else if (/save recipe/i.test(transcript)) {
+        if (isLastStep) {
+          setShowSavePrompt(true);
+        } else {
+          // Maybe just go to save prompt anyway? The user might want to save early.
+          setShowSavePrompt(true);
+        }
       }
     };
 
     recognitionRef.current = recognition;
-
-    // Auto-start on mount
-    setVoiceEnabled(true);
-    recognition.start();
+    if (voiceEnabled) {
+      try { recognition.start(); } catch(e) {}
+    }
 
     return () => {
       if (loopTimeoutRef.current) clearTimeout(loopTimeoutRef.current);
       recognition.abort();
     };
-  }, []);
+  }, [voiceEnabled, currentStepIndex]); // Re-run effect dependencies
 
   // Speak step instructions when step changes
   useEffect(() => {
-    if (!voiceSupported) return;
+    speakStep();
+  }, [currentStepIndex, voiceSupported, voiceOutputEnabled]);
 
-    const utterance = new SpeechSynthesisUtterance(`${step.title}. ${step.instruction}`);
-    utterance.rate = 0.95;
-    utterance.pitch = 1;
-    utterance.volume = 1;
-
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
-  }, [currentStepIndex, voiceSupported]);
-
-  const toggleVoice = () => {
-    // Removed - voice always on in cooking mode
+  const toggleVoiceListening = () => {
+    setVoiceEnabled(prev => {
+      const nextValue = !prev;
+      if (!nextValue) {
+        window.speechSynthesis.cancel();
+        if (loopTimeoutRef.current) {
+          clearTimeout(loopTimeoutRef.current);
+          loopTimeoutRef.current = null;
+        }
+        recognitionRef.current?.abort();
+      } else {
+        recognitionRef.current?.start?.();
+      }
+      return nextValue;
+    });
   };
 
   // Swipe handling
@@ -203,31 +309,72 @@ const LiveCooking = () => {
 
   return (
     <div 
-      style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', display: 'flex', flexDirection: 'column', paddingBottom: 'env(safe-area-inset-bottom)' }}
+      style={{ height: '100dvh', backgroundColor: 'var(--bg)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Top Bar */}
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'calc(24px + env(safe-area-inset-top)) 20px 12px', zIndex: 10 }}>
-        <button onClick={() => navigate('/')} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '50%', padding: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: 'var(--shadow)' }}>
-          <Home size={24} color="var(--text)" />
-        </button>
-        <button onClick={() => navigate(-1)} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '24px', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: 'var(--shadow)' }}>
-          <ChevronLeft size={20} color="var(--text)" />
-          <span style={{ fontWeight: '700', fontSize: '14px' }}>Recipe Overview</span>
-        </button>
-      </header>
+      {/* Scrollable Content Area */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        {/* Top Bar */}
+        <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: 'calc(20px + env(safe-area-inset-top)) 20px 12px', gap: '12px' }}>
+          <button onClick={handleExit} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '50%', padding: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: 'var(--shadow)', flexShrink: 0 }}>
+            <Home size={24} color="var(--text)" />
+          </button>
 
-      <div style={{ padding: '0 20px 10px' }}>
-        <div style={{ height: '8px', borderRadius: '999px', backgroundColor: 'var(--accent-green-light)', overflow: 'hidden' }}>
-          <div style={{ width: `${progressPercent}%`, height: '100%', borderRadius: '999px', backgroundColor: 'var(--accent-green)' }} />
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginLeft: 'auto' }}>
+            <button
+              onClick={toggleVoiceListening}
+              aria-pressed={voiceEnabled}
+              style={{
+                minWidth: '44px',
+                minHeight: '44px',
+                borderRadius: '999px',
+                border: `1.5px solid ${voiceEnabled ? 'var(--accent-green)' : 'var(--border)'}`,
+                backgroundColor: voiceEnabled ? 'var(--accent-green-light)' : 'var(--surface)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: voiceEnabled ? 'var(--shadow)' : 'none',
+                flexShrink: 0
+              }}
+            >
+              {voiceEnabled ? <Mic size={18} color="var(--accent-green)" /> : <MicOff size={18} color="var(--text-light)" />}
+            </button>
+
+            <button
+              onClick={() => setVoiceOutputEnabled(prev => !prev)}
+              aria-pressed={voiceOutputEnabled}
+              aria-label={voiceOutputEnabled ? 'Turn voice over off' : 'Turn voice over on'}
+              style={{
+                minWidth: '44px',
+                minHeight: '44px',
+                borderRadius: '999px',
+                border: '1px solid var(--border)',
+                backgroundColor: voiceOutputEnabled ? 'var(--accent-green-light)' : 'var(--surface)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: 'var(--shadow)',
+                flexShrink: 0
+              }}
+            >
+              {voiceOutputEnabled ? <Volume2 size={18} color="var(--accent-green)" /> : <VolumeX size={18} color="var(--text-light)" />}
+            </button>
+          </div>
+        </header>
+
+        <div style={{ padding: '0 20px 10px', flexShrink: 0 }}>
+          <div style={{ height: '8px', borderRadius: '999px', backgroundColor: 'var(--accent-green-light)', overflow: 'hidden' }}>
+            <div style={{ width: `${progressPercent}%`, height: '100%', borderRadius: '999px', backgroundColor: 'var(--accent-green)' }} />
+          </div>
         </div>
-      </div>
 
-      {/* Main Content Area */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '16px 20px 20px' }}>
+        {/* Main Content Area */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '16px 20px 12px' }}>
         {/* Step Title - Centered (slightly lower for central visual) */}
-        <h2 style={{ fontFamily: 'var(--heading)', fontSize: '28px', fontWeight: '700', color: 'var(--text)', marginTop: '32px', marginBottom: '8px', lineHeight: 1.3, textAlign: 'center' }}>
+        <h2 style={{ fontFamily: 'var(--heading)', fontSize: '28px', fontWeight: '700', color: 'var(--text)', marginTop: '24px', marginBottom: '8px', lineHeight: 1.3, textAlign: 'center' }}>
           {step.title}
         </h2>
 
@@ -247,11 +394,8 @@ const LiveCooking = () => {
           </div>
         )}
 
-        {/* Flex spacer */}
-        <div style={{ flex: 1 }}></div>
-
         {/* Controls row: Modify (always) and More (for debone) placed ABOVE the timer */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
           {step.id === 2 && (
             <button
               onClick={() => setIsMoreOpen(true)}
@@ -299,23 +443,27 @@ const LiveCooking = () => {
 
         {/* Timer - centered below controls */}
         {step.hasTimer && (
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '48px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
             <CookingTimer durationInSeconds={step.timerSeconds} />
           </div>
         )}
+        </div>
 
-        {/* Previous/Next Navigation - Bottom */}
+      </div>
+
+      {/* Previous/Next Navigation - Pinned Footer */}
+      <div style={{ flexShrink: 0, padding: '12px 20px calc(16px + env(safe-area-inset-bottom))', backgroundColor: 'var(--bg)', borderTop: '1px solid rgba(234, 234, 234, 0.8)' }}>
         <div style={{ display: 'flex', gap: '12px' }}>
           <button 
             onClick={prevStep}
             disabled={isFirstStep}
-            style={{ flex: 1, minHeight: '48px', borderRadius: '999px', backgroundColor: 'white', color: 'var(--text)', border: '1.5px solid var(--text)', fontWeight: '600', fontSize: '14px', cursor: isFirstStep ? 'not-allowed' : 'pointer', opacity: isFirstStep ? 0.4 : 1 }}
+            style={{ flex: 1, minHeight: '48px', borderRadius: '999px', backgroundColor: 'white', color: 'var(--text)', border: '1.5px solid var(--text)', fontWeight: '600', fontSize: '14px', cursor: isFirstStep ? 'not-allowed' : 'pointer', opacity: isFirstStep ? 0.4 : 1, touchAction: 'manipulation' }}
           >
             ← Previous
           </button>
           <button 
             onClick={nextStep}
-            style={{ flex: 1, minHeight: '48px', borderRadius: '999px', backgroundColor: 'var(--text)', color: 'white', border: 'none', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}
+            style={{ flex: 1, minHeight: '48px', borderRadius: '999px', backgroundColor: 'var(--text)', color: 'white', border: 'none', fontWeight: '600', fontSize: '14px', cursor: 'pointer', touchAction: 'manipulation' }}
           >
             {isLastStep ? 'Finish' : 'Next →'}
           </button>

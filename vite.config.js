@@ -10,3 +10,5 @@ export default defineConfig({
   ],
   base: "/cooking_guide/",
 })
+
+

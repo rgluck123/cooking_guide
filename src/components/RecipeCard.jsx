@@ -1,7 +1,7 @@
 import React from 'react';
-import { Clock } from 'lucide-react';
+import { Clock, Book } from 'lucide-react';
 
-const RecipeCard = ({ title, time, image, isBookLink = false, onClick }) => {
+const RecipeCard = ({ title, time, image, isBookLink = false, progress, onClick }) => {
   if (isBookLink) {
     return (
       <div 
@@ -79,7 +79,8 @@ const RecipeCard = ({ title, time, image, isBookLink = false, onClick }) => {
         flexDirection: 'column',
         overflow: 'hidden',
         border: '1px solid var(--border)',
-        flexShrink: 0
+        flexShrink: 0,
+        position: 'relative'
       }}
     >
       {/* Top Half Image - Taller to give photo more space */}
@@ -89,8 +90,10 @@ const RecipeCard = ({ title, time, image, isBookLink = false, onClick }) => {
         backgroundImage: `url(${image || 'https://via.placeholder.com/150'})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        borderBottom: '1px solid var(--border)'
-      }} />
+        borderBottom: '1px solid var(--border)',
+        position: 'relative'
+      }}>
+      </div>
       
       {/* Bottom Half Text Area */}
       <div style={{
@@ -128,6 +131,28 @@ const RecipeCard = ({ title, time, image, isBookLink = false, onClick }) => {
           {time} min
         </div>
       </div>
+
+      {/* Bottom Progress Bar */}
+      {typeof progress === 'number' && progress < 100 && (
+        <div style={{
+          width: '100%',
+          height: '4px',
+          backgroundColor: 'rgba(74, 107, 68, 0.12)',
+          borderBottomLeftRadius: '16px',
+          borderBottomRightRadius: '16px',
+          overflow: 'hidden',
+          position: 'absolute',
+          bottom: 0,
+          left: 0
+        }}>
+          <div style={{
+            width: `${Math.max(progress, 2)}%`,
+            height: '100%',
+            backgroundColor: 'var(--accent-green)',
+            transition: 'width 0.3s ease'
+          }} />
+        </div>
+      )}
     </div>
   );
 };

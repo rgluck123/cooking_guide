@@ -1,19 +1,23 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import Home from './pages/Home';
 import Filter from './pages/Filter';
 import Results from './pages/Results';
 import RecipeOverview from './pages/RecipeOverview';
 import LiveCooking from './pages/LiveCooking';
+import Settings from './pages/Settings';
 import SaveRecipe from './pages/SaveRecipe';
 import RecipeBook from './pages/RecipeBook';
-import BottomNav from './components/BottomNav';
+import UnderConstruction from './pages/UnderConstruction';
 import { RecipeProvider } from './context/RecipeContext';
 import './App.css';
 
 function AppLayout() {
   const location = useLocation();
-  const hideNavRoutes = ['/recipe', '/live-cooking', '/save-recipe', '/recipe-book'];
-  const shouldHideNav = hideNavRoutes.some(route => location.pathname.startsWith(route));
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   return (
     <div className="mobile-app-container">
@@ -24,11 +28,12 @@ function AppLayout() {
           <Route path="/results" element={<Results />} />
           <Route path="/recipe/:id" element={<RecipeOverview />} />
           <Route path="/live-cooking" element={<LiveCooking />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/save-recipe" element={<SaveRecipe />} />
           <Route path="/recipe-book" element={<RecipeBook />} />
+          <Route path="/under-construction" element={<UnderConstruction />} />
         </Routes>
       </div>
-      {!shouldHideNav && <BottomNav />}
     </div>
   );
 }

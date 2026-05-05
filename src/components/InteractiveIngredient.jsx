@@ -115,18 +115,18 @@ const InteractiveIngredient = ({ item, onSwipeLeft, onSwipeRight, onLongPress })
   let bgIndicator = 'transparent';
   let indicatorText = '';
   if (offsetX < -30) {
-    bgIndicator = '#fee2e2'; // light red
-    indicatorText = 'Delete';
+    bgIndicator = item.removed ? 'var(--accent-green-light)' : '#fff7ed';
+    indicatorText = item.removed ? 'Restore' : 'Remove';
   } else if (offsetX > 30) {
     bgIndicator = 'var(--accent-green-light)';
-    indicatorText = 'Substitute';
+    indicatorText = item.removed ? 'Restore' : 'Substitute';
   }
 
   return (
     <div style={{ position: 'relative', marginBottom: '12px', borderRadius: '12px', overflow: 'hidden', backgroundColor: bgIndicator }}>
       
       {/* Background Indicators (visible when swiping) */}
-      <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: offsetX > 0 ? 'flex-start' : 'flex-end', padding: '0 20px', fontWeight: '700', color: offsetX > 0 ? 'var(--accent-green)' : '#ef4444', opacity: Math.abs(offsetX) / 60 }}>
+      <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: offsetX > 0 ? 'flex-start' : 'flex-end', padding: '0 20px', fontWeight: '700', color: offsetX > 0 || item.removed ? 'var(--accent-green)' : '#c2410c', opacity: Math.abs(offsetX) / 60 }}>
         {indicatorText}
       </div>
 
@@ -144,7 +144,7 @@ const InteractiveIngredient = ({ item, onSwipeLeft, onSwipeRight, onLongPress })
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '16px',
-          backgroundColor: 'var(--surface)',
+          backgroundColor: item.removed ? '#f6f6f4' : 'var(--surface)',
           borderRadius: '12px',
           border: '1px solid var(--border)',
           transform: `translateX(${offsetX}px)`,
@@ -164,11 +164,17 @@ const InteractiveIngredient = ({ item, onSwipeLeft, onSwipeRight, onLongPress })
             <div style={{ 
               fontSize: '16px', 
               fontWeight: '600', 
-              color: isChecked ? 'var(--text-light)' : 'var(--text)'
+              color: item.removed || isChecked ? 'var(--text-light)' : 'var(--text)',
+              textDecoration: item.removed ? 'line-through' : 'none'
             }}>
               {item.name}
               {item.edited && <span style={{ fontSize: '12px', color: 'var(--accent-orange)', marginLeft: '8px', fontStyle: 'italic' }}>(edited)</span>}
             </div>
+            {item.assignedStep && (
+              <div style={{ fontSize: '12px', color: 'var(--accent-green)', marginTop: '2px', fontWeight: '600' }}>
+                Added to step {item.assignedStep}
+              </div>
+            )}
             {item.originalName !== item.name && (
               <div style={{ fontSize: '12px', color: 'var(--text-light)', marginTop: '2px' }}>
                 Substituted for: {item.originalName}
@@ -176,7 +182,7 @@ const InteractiveIngredient = ({ item, onSwipeLeft, onSwipeRight, onLongPress })
             )}
           </div>
         </div>
-        <div style={{ fontWeight: '700', color: isChecked ? 'var(--text-light)' : 'var(--accent-green)' }}>
+        <div style={{ fontWeight: '700', color: item.removed || isChecked ? 'var(--text-light)' : 'var(--accent-green)', textDecoration: item.removed ? 'line-through' : 'none' }}>
           {item.quantity}
         </div>
       </div>

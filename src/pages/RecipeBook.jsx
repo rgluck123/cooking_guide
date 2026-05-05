@@ -29,17 +29,28 @@ const RecipeBook = () => {
         borderBottom: '1px solid var(--border)',
         display: 'flex',
         alignItems: 'center',
-        gap: '16px'
+        justifyContent: 'flex-start',
+        position: 'sticky',
+        top: 0,
+        zIndex: 20
       }}>
         <button
           onClick={() => navigate('/')}
+          aria-label="Back to home"
           style={{
-            background: 'none',
-            border: 'none',
+            width: '44px',
+            height: '44px',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: '50%',
             cursor: 'pointer',
-            padding: '4px',
+            padding: 0,
             color: 'var(--text)',
-            display: 'flex'
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: 'var(--shadow)',
+            flexShrink: 0
           }}
         >
           <ChevronLeft size={24} />
@@ -48,7 +59,7 @@ const RecipeBook = () => {
           fontSize: '20px',
           fontWeight: '700',
           color: 'var(--text)',
-          margin: 0,
+          margin: '0 0 0 12px',
           fontFamily: 'var(--heading)'
         }}>
           Recipe Book
@@ -59,23 +70,33 @@ const RecipeBook = () => {
       <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
         {savedRecipes.length === 0 ? (
           <div style={{
+            maxWidth: '100%',
+            minHeight: '260px',
+            padding: '28px 20px',
+            backgroundColor: 'rgba(255, 255, 255, 0.65)',
+            border: '1px solid rgba(234, 234, 234, 0.9)',
+            borderRadius: '20px',
+            boxShadow: 'var(--shadow)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            minHeight: '300px',
             textAlign: 'center'
           }}>
             <p style={{
               fontSize: '16px',
-              color: 'var(--text-light)',
-              marginBottom: '12px'
+              color: 'var(--text)',
+              fontWeight: '700',
+              margin: '0 0 10px 0'
             }}>
               No saved recipes yet
             </p>
             <p style={{
               fontSize: '13px',
-              color: 'var(--text-light)'
+              color: 'var(--text-light)',
+              lineHeight: '1.6',
+              margin: 0,
+              maxWidth: '260px'
             }}>
               Cook and save a recipe to see it here!
             </p>

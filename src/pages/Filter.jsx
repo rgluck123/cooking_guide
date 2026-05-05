@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Minus, Plus } from 'lucide-react';
+import { ChevronLeft, Minus, Plus, Search, SlidersHorizontal } from 'lucide-react';
 
 const Filter = () => {
   const navigate = useNavigate();
   
-  const [difficulty, setDifficulty] = useState(['Beginner']);
-  const [protein, setProtein] = useState(['Chicken']);
+  const [difficulty, setDifficulty] = useState([]);
+  const [protein, setProtein] = useState([]);
   const [portions, setPortions] = useState(1);
-  const [time, setTime] = useState(['15 min']);
+  const [time, setTime] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const difficulties = ['Beginner', 'Intermediate', 'Advanced'];
   const proteins = ['Chicken', 'Fish', 'Pig', 'Cow', 'Vegetarian', '+'];
@@ -40,36 +41,56 @@ const Filter = () => {
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
-      {/* Header with Apply Button */}
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'calc(16px + env(safe-area-inset-top)) 20px', position: 'sticky', top: 0, backgroundColor: 'var(--bg)', zIndex: 10 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', backgroundColor: 'var(--bg)', overflow: 'hidden' }}>
+      {/* Header */}
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'calc(16px + env(safe-area-inset-top)) 20px 12px', position: 'sticky', top: 0, backgroundColor: 'var(--bg)', zIndex: 20, borderBottom: '1px solid var(--border)' }}>
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <ChevronLeft size={28} color="var(--text)" />
         </button>
-        <h1 style={{ fontSize: '20px', fontWeight: '700' }}>
+        <h1 style={{ fontSize: '20px', fontWeight: '700', margin: 0 }}>
           Filter
         </h1>
-        <button
-          onClick={() => navigate('/results')}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: 'var(--accent-green)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '20px',
-            fontSize: '14px',
-            fontWeight: '700',
-            fontFamily: 'var(--heading)',
-            cursor: 'pointer',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          Apply
-        </button>
+        <div style={{ width: '28px' }} />
       </header>
 
       {/* Content */}
-      <div style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: '32px', flex: 1 }}>
+      <div style={{ padding: '12px 20px 20px', display: 'flex', flexDirection: 'column', gap: '32px', flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        {/* Search and Filter */}
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <div style={{ 
+            flex: 1, 
+            display: 'flex', 
+            alignItems: 'center', 
+            backgroundColor: 'var(--surface)', 
+            borderRadius: '12px',
+            padding: '8px 14px',
+            minHeight: '44px',
+            boxShadow: 'var(--shadow)',
+            border: '1px solid var(--border)'
+          }}>
+            <Search size={20} color="var(--text-light)" />
+            <input 
+              type="text" 
+              placeholder="Search recipes..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  navigate('/results', { state: { query: searchTerm } });
+                }
+              }}
+              style={{ 
+                border: 'none', 
+                outline: 'none', 
+                marginLeft: '10px', 
+                width: '100%',
+                fontSize: '15px',
+                fontFamily: 'var(--sans)',
+                backgroundColor: 'transparent'
+              }} 
+            />
+          </div>
+        </div>
         
         {/* Difficulty */}
         <section>
@@ -94,7 +115,7 @@ const Filter = () => {
         {/* Portions */}
         <section>
           <h2 style={{ fontSize: '18px', marginBottom: '16px' }}>Portions</h2>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px', backgroundColor: 'var(--surface)', padding: '12px 24px', borderRadius: '16px', alignSelf: 'flex-start', boxShadow: '0 2px 8px rgba(0,0,0,0.02)', border: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', alignSelf: 'flex-start' }}>
             <button 
               onClick={() => setPortions(Math.max(1, portions - 1))}
               style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
@@ -123,25 +144,22 @@ const Filter = () => {
 
       </div>
 
-      {/* Floating Apply Button Above Nav */}
+      {/* Pinned Footer with Apply Button */}
       <div style={{
-        position: 'fixed',
-        bottom: 'calc(70px + env(safe-area-inset-bottom))',
-        left: 0,
-        right: 0,
-        padding: '16px 20px',
+        flexShrink: 0,
+        padding: '12px 20px calc(16px + env(safe-area-inset-bottom))',
         backgroundColor: 'var(--bg)',
-        borderTop: '1px solid var(--border)',
-        zIndex: 40,
+        borderTop: '1px solid rgba(234, 234, 234, 0.8)',
         display: 'flex',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        zIndex: 30
       }}>
         <button
           onClick={() => navigate('/results')}
           style={{
             width: '100%',
             maxWidth: '440px',
-            padding: '16px',
+            padding: '14px 20px',
             backgroundColor: 'var(--accent-green)',
             color: 'white',
             border: 'none',

@@ -1,19 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeft, Check } from 'lucide-react';
+import { ChevronLeft, Check, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { useRecipes } from '../context/RecipeContext';
 
 const SaveRecipe = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { saveRecipe } = useRecipes();
+  const { saveRecipe, liveCookingDefaults } = useRecipes();
   const [recipeName, setRecipeName] = useState('Lebanese Spicy Chicken');
   const [notes, setNotes] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
   const [selectedModifications, setSelectedModifications] = useState(new Set());
 
+  // Voice States
+  const [voiceEnabled, setVoiceEnabled] = useState(liveCookingDefaults.micEnabled);
+  const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(liveCookingDefaults.voiceOverEnabled);
+  const [voiceSupported, setVoiceSupported] = useState(true);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
+  const loopTimeoutRef = useRef(null);
+
   // Get modifications from navigation state
   const modifications = location.state?.modifications || [];
+
+  // Initialize all modifications as selected by default
+  useEffect(() => {
+    if (modifications.length > 0 && selectedModifications.size === 0) {
+      const allIds = new Set(modifications.map(m => m.id));
+      setSelectedModifications(allIds);
+    }
+  }, [modifications]);
 
   const toggleSelectModification = (id) => {
     setSelectedModifications(prev => {
@@ -42,10 +58,122 @@ const SaveRecipe = () => {
     };
 
     saveRecipe(recipeData);
+    if (voiceOutputEnabled) {
+      const utterance = new SpeechSynthesisUtterance("Recipe saved successfully");
+      window.speechSynthesis.speak(utterance);
+    }
     setShowSuccess(true);
     setTimeout(() => {
       navigate('/');
     }, 2000);
+  };
+
+  // Voice Interaction Logic
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setVoiceSupported(false);
+      return;
+    }
+
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    if (isSafari) {
+      setVoiceSupported(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => {
+      setIsListening(false);
+      if (voiceEnabled) {
+        loopTimeoutRef.current = setTimeout(() => {
+          if (recognitionRef.current && voiceEnabled) {
+            try { recognitionRef.current.start(); } catch(e) {}
+          }
+        }, 500);
+      }
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript.toLowerCase().trim();
+      console.log('Save Screen Voice Command:', transcript);
+
+      // HOME SCREEN
+      if (/(go to (the )?home screen( please)?|home screen|home page|go to (the )?home page( please)?|(please )?go to (the )?home page|(please )?go to (the )?home screen)/i.test(transcript)) {
+        navigate('/');
+      }
+      // REMOVE INGREDIENT
+      else if (transcript.startsWith('remove ')) {
+        const ingredientName = transcript.replace('remove ', '').trim();
+        const modToRemove = modifications.find(m => m.name.toLowerCase() === ingredientName);
+        if (modToRemove) {
+          // If it's in the set, remove it (uncheck)
+          if (selectedModifications.has(modToRemove.id)) {
+            toggleSelectModification(modToRemove.id);
+            if (voiceOutputEnabled) {
+              window.speechSynthesis.speak(new SpeechSynthesisUtterance(`Removed ${ingredientName}`));
+            }
+          }
+        }
+      }
+      // SAVE RECIPE
+      else if (/save recipe/i.test(transcript)) {
+        handleSaveRecipe();
+      }
+      // CONFIRM (Yes)
+      else if (/^yes$/i.test(transcript)) {
+        handleSaveRecipe();
+      }
+      // SPEECH OUTPUT TOGGLE
+      else if (/(unmute|allow (voice|speech))/i.test(transcript)) {
+        setVoiceOutputEnabled(true);
+      }
+      else if (/(mute|turn off (voice|speech)|disable (voice|speech))/i.test(transcript)) {
+        setVoiceOutputEnabled(false);
+      }
+      // SAY AGAIN
+      else if (/(again( please)?|(please )?(say )?again|(please )?speak again)/i.test(transcript)) {
+        if (voiceOutputEnabled) {
+          window.speechSynthesis.speak(new SpeechSynthesisUtterance("You are on the save recipe screen. You can say Save Recipe to finish."));
+        }
+      }
+      // CLOSE / BACK
+      else if (/(close|go to (the )?(recipe|step))/i.test(transcript)) {
+        navigate(-1);
+      }
+    };
+
+    recognitionRef.current = recognition;
+    if (voiceEnabled) {
+      try { recognition.start(); } catch(e) {}
+    }
+
+    return () => {
+      if (loopTimeoutRef.current) clearTimeout(loopTimeoutRef.current);
+      recognition.abort();
+    };
+  }, [voiceEnabled, modifications, selectedModifications, voiceOutputEnabled]);
+
+  const toggleVoiceListening = () => {
+    setVoiceEnabled(prev => {
+      const nextValue = !prev;
+      if (!nextValue) {
+        window.speechSynthesis.cancel();
+        if (loopTimeoutRef.current) {
+          clearTimeout(loopTimeoutRef.current);
+          loopTimeoutRef.current = null;
+        }
+        recognitionRef.current?.abort();
+      } else {
+        recognitionRef.current?.start?.();
+      }
+      return nextValue;
+    });
   };
 
   return (
@@ -65,30 +193,69 @@ const SaveRecipe = () => {
         borderBottom: '1px solid var(--border)',
         display: 'flex',
         alignItems: 'center',
+        justifyContent: 'space-between',
         gap: '16px'
       }}>
-        <button
-          onClick={() => navigate(-1)}
-          style={{ 
-            background: 'none', 
-            border: 'none', 
-            cursor: 'pointer', 
-            padding: '4px',
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <button
+            onClick={() => navigate(-1)}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              cursor: 'pointer', 
+              padding: '4px',
+              color: 'var(--text)',
+              display: 'flex'
+            }}
+          >
+            <ChevronLeft size={24} />
+          </button>
+          <h1 style={{ 
+            fontSize: '20px', 
+            fontWeight: '700', 
             color: 'var(--text)',
-            display: 'flex'
-          }}
-        >
-          <ChevronLeft size={24} />
-        </button>
-        <h1 style={{ 
-          fontSize: '20px', 
-          fontWeight: '700', 
-          color: 'var(--text)',
-          margin: 0,
-          fontFamily: 'var(--heading)'
-        }}>
-          Save Recipes
-        </h1>
+            margin: 0,
+            fontFamily: 'var(--heading)'
+          }}>
+            Save Recipes
+          </h1>
+        </div>
+
+        {/* Voice Controls */}
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={toggleVoiceListening}
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              border: '1px solid var(--border)',
+              backgroundColor: voiceEnabled ? 'var(--accent-green-light)' : 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer'
+            }}
+          >
+            {voiceEnabled ? <Mic size={18} color="var(--accent-green)" /> : <MicOff size={18} color="var(--text-light)" />}
+          </button>
+          <button
+            onClick={() => setVoiceOutputEnabled(prev => !prev)}
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              border: '1px solid var(--border)',
+              backgroundColor: voiceOutputEnabled ? 'var(--accent-green-light)' : 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer'
+            }}
+          >
+            {voiceOutputEnabled ? <Volume2 size={18} color="var(--accent-green)" /> : <VolumeX size={18} color="var(--text-light)" />}
+          </button>
+        </div>
       </header>
 
       {/* Main Content */}
@@ -268,7 +435,7 @@ const SaveRecipe = () => {
               fontFamily: 'var(--sans)',
               color: 'var(--text)',
               backgroundColor: 'var(--surface)',
-              boxSizing: 'border-box',
+              boxSizing: 'box-sizing',
               outline: 'none',
               minHeight: '80px',
               resize: 'none'
