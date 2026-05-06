@@ -51,6 +51,7 @@ const RecipeOverview = () => {
 
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedIngredientIds, setSelectedIngredientIds] = useState([]);
+  const [groupSwipeOffset, setGroupSwipeOffset] = useState(0);
 
   const [isDeboneModalOpen, setIsDeboneModalOpen] = useState(false);
   const [isAddIngredientModalOpen, setIsAddIngredientModalOpen] = useState(false);
@@ -70,46 +71,75 @@ const RecipeOverview = () => {
     );
   };
 
-  const handleSwipeLeft = (item) => {
-    const targetIds = selectedIngredientIds.includes(item.id) ? selectedIngredientIds : [item.id];
-    const isSubbed = item.edited || item.replacedIds;
+  const getTargetIds = (item) => selectedIngredientIds.includes(item.id) ? selectedIngredientIds : [item.id];
 
-    if (isSubbed) {
-      setIngredients(prev => {
-        let next = [...prev];
-        targetIds.forEach(id => {
-          const target = next.find(i => i.id === id);
-          if (target && target.replacedIds) {
-            next = next.filter(i => i.id !== id);
-            next = next.map(i => target.replacedIds.includes(i.id) ? { ...i, removed: false, hidden: false } : i);
-          } else if (target && target.edited) {
-            next = next.map(i => i.id === id ? { ...i, name: i.originalName, quantity: i.originalQuantity || i.quantity, edited: false } : i);
-          }
-        });
-        return next;
-      });
-    } else {
-      const willRemove = !item.removed;
-      setIngredients(prev => prev.map(i => targetIds.includes(i.id) ? { ...i, removed: willRemove } : i));
-    }
-
-    setIsActionMenuOpen(false);
+  const clearSelectionIfMode = () => {
     if (isSelectMode) {
       setSelectedIngredientIds([]);
       setIsSelectMode(false);
     }
   };
 
-  const handleSwipeRight = (item) => {
-    const targetIds = selectedIngredientIds.includes(item.id) ? selectedIngredientIds : [item.id];
+  const executeRemove = (item) => {
+    const targetIds = getTargetIds(item);
+    setIngredients(prev => prev.map(i => targetIds.includes(i.id) ? { ...i, removed: true } : i));
+    setIsActionMenuOpen(false);
+    clearSelectionIfMode();
+  };
+
+  const executeRestore = (item) => {
+    const targetIds = getTargetIds(item);
+    setIngredients(prev => prev.map(i => targetIds.includes(i.id) ? { ...i, removed: false } : i));
+    setIsActionMenuOpen(false);
+    clearSelectionIfMode();
+  };
+
+  const executeReset = (item) => {
+    const targetIds = getTargetIds(item);
+    setIngredients(prev => {
+      let next = [...prev];
+      targetIds.forEach(id => {
+        const target = next.find(i => i.id === id);
+        if (target && target.replacedIds) {
+          next = next.filter(i => i.id !== id);
+          next = next.map(i => target.replacedIds.includes(i.id) ? { ...i, removed: false, hidden: false } : i);
+        } else if (target && target.edited) {
+          next = next.map(i => i.id === id ? { ...i, name: i.originalName, quantity: i.originalQuantity || i.quantity, edited: false } : i);
+        }
+      });
+      return next;
+    });
+    setIsActionMenuOpen(false);
+    clearSelectionIfMode();
+  };
+
+  const openSubstitute = (item) => {
+    const targetIds = getTargetIds(item);
     const targetItems = ingredients.filter(i => targetIds.includes(i.id));
     setActiveSubIngredients(targetItems);
     setIsSubModalOpen(true);
     setIsActionMenuOpen(false);
   };
 
+  const handleSwipeLeft = (item) => {
+    if (item.removed) {
+      executeRestore(item);
+    } else {
+      executeRemove(item);
+    }
+  };
+
+  const handleSwipeRight = (item) => {
+    const isSubbed = item.edited || item.replacedIds;
+    if (isSubbed) {
+      executeReset(item);
+    } else {
+      openSubstitute(item);
+    }
+  };
+
   const handleLongPress = (item) => {
-    const targetIds = selectedIngredientIds.includes(item.id) ? selectedIngredientIds : [item.id];
+    const targetIds = getTargetIds(item);
     setActiveActionIngredient(item);
     setActiveActionTargetIds(targetIds);
     setIsActionMenuOpen(true);
@@ -144,10 +174,7 @@ const RecipeOverview = () => {
         return next;
       }
     });
-    if (isSelectMode) {
-      setSelectedIngredientIds([]);
-      setIsSelectMode(false);
-    }
+    clearSelectionIfMode();
   };
 
   const handleAddIngredient = () => {
@@ -351,12 +378,12 @@ const RecipeOverview = () => {
 
             {showIngredientTips && (
               <div style={{ position: 'absolute', top: '40px', left: 'calc(50% - 8px)', transform: 'translateX(-50%)', zIndex: 5, width: 'min(360px, calc(100vw - 64px))', backgroundColor: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', boxShadow: 'var(--shadow)' }}>
-                <ul style={{ fontSize: '13px', color: 'var(--text-light)', margin: 0, paddingLeft: '16px', lineHeight: '1.6', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <li>Tap <strong>Select</strong> to choose multiple ingredients.</li>
-                  <li>Swipe right<ArrowRight size={14} style={{ display: 'inline-block', verticalAlign: 'middle', margin: '0 2px', position: 'relative', top: '-1px' }} /> to substitute, or left<ArrowLeft size={14} style={{ display: 'inline-block', verticalAlign: 'middle', margin: '0 2px', position: 'relative', top: '-1px' }} /> to remove/restore.</li>
-                  <li>Swipe or long press a selected item to perform actions on the whole group.</li>
-                  <li>Swipe left<ArrowLeft size={14} style={{ display: 'inline-block', verticalAlign: 'middle', margin: '0 2px', position: 'relative', top: '-1px' }} /> on a substituted item to reset it.</li>
-                </ul>
+                <div style={{ fontSize: '14px', color: 'var(--text-light)', margin: 0, lineHeight: '1.6' }}>
+                  <p style={{ margin: '0 0 8px 0' }}>Tap <strong>Select</strong> to choose multiple ingredients. Swipe or long press a selected item to perform actions on the whole group.</p>
+                  <p style={{ margin: '0 0 8px 0' }}><strong>Not substituted:</strong> Swipe right to substitute, left to remove.</p>
+                  <p style={{ margin: '0 0 8px 0' }}><strong>Substituted:</strong> Swipe right to reset, left to remove.</p>
+                  <p style={{ margin: '0' }}><strong>Removed:</strong> Swipe right to substitute, left to restore.</p>
+                </div>
               </div>
             )}
           </div>
@@ -372,6 +399,9 @@ const RecipeOverview = () => {
                 isSelectMode={isSelectMode}
                 isSelected={selectedIngredientIds.includes(item.id)}
                 onToggleSelect={handleToggleSelect}
+                groupOffsetX={selectedIngredientIds.includes(item.id) && selectedIngredientIds.length > 1 ? groupSwipeOffset : undefined}
+                onGroupDrag={(offset) => setGroupSwipeOffset(offset)}
+                onGroupDragEnd={() => setGroupSwipeOffset(0)}
               />
             ))}
           </div>
@@ -380,7 +410,7 @@ const RecipeOverview = () => {
             onClick={() => setIsAddIngredientModalOpen(true)}
             style={{
               width: '100%',
-              marginTop: '24px',
+              marginTop: '32px',
               padding: '14px 16px',
               borderRadius: '12px',
               backgroundColor: 'var(--accent-green-light)',
@@ -631,20 +661,58 @@ const RecipeOverview = () => {
               {activeActionTargetIds.length > 1 ? `${activeActionTargetIds.length} Ingredients Selected` : activeActionIngredient.name}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {(!activeActionIngredient.removed || activeActionTargetIds.length > 1) && (
-                <button 
-                  onClick={() => handleSwipeRight(activeActionIngredient)}
-                  style={{ padding: '16px', borderRadius: '12px', backgroundColor: 'var(--accent-green-light)', color: 'var(--accent-green)', fontWeight: '700', border: 'none', fontSize: '16px' }}
-                >
-                  Substitute {activeActionTargetIds.length > 1 ? 'Group' : 'Ingredient'}
-                </button>
+              {(activeActionIngredient.edited || activeActionIngredient.replacedIds) ? (
+                <>
+                  <button 
+                    onClick={() => openSubstitute(activeActionIngredient)}
+                    style={{ padding: '16px', borderRadius: '12px', backgroundColor: 'var(--accent-green-light)', color: 'var(--accent-green)', fontWeight: '700', border: 'none', fontSize: '16px' }}
+                  >
+                    Substitute Again
+                  </button>
+                  <button 
+                    onClick={() => executeReset(activeActionIngredient)}
+                    style={{ padding: '16px', borderRadius: '12px', backgroundColor: '#fff7ed', color: '#c2410c', fontWeight: '700', border: 'none', fontSize: '16px' }}
+                  >
+                    Reset to Original
+                  </button>
+                  <button 
+                    onClick={() => executeRemove(activeActionIngredient)}
+                    style={{ padding: '16px', borderRadius: '12px', backgroundColor: '#fff7ed', color: '#c2410c', fontWeight: '700', border: 'none', fontSize: '16px' }}
+                  >
+                    Remove {activeActionTargetIds.length > 1 ? 'Group' : 'Ingredient'}
+                  </button>
+                </>
+              ) : activeActionIngredient.removed ? (
+                <>
+                  <button 
+                    onClick={() => executeRestore(activeActionIngredient)}
+                    style={{ padding: '16px', borderRadius: '12px', backgroundColor: 'var(--accent-green-light)', color: 'var(--accent-green)', fontWeight: '700', border: 'none', fontSize: '16px' }}
+                  >
+                    Restore {activeActionTargetIds.length > 1 ? 'Group' : 'Ingredient'}
+                  </button>
+                  <button 
+                    onClick={() => openSubstitute(activeActionIngredient)}
+                    style={{ padding: '16px', borderRadius: '12px', backgroundColor: 'var(--accent-green-light)', color: 'var(--accent-green)', fontWeight: '700', border: 'none', fontSize: '16px' }}
+                  >
+                    Substitute {activeActionTargetIds.length > 1 ? 'Group' : 'Ingredient'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button 
+                    onClick={() => openSubstitute(activeActionIngredient)}
+                    style={{ padding: '16px', borderRadius: '12px', backgroundColor: 'var(--accent-green-light)', color: 'var(--accent-green)', fontWeight: '700', border: 'none', fontSize: '16px' }}
+                  >
+                    Substitute {activeActionTargetIds.length > 1 ? 'Group' : 'Ingredient'}
+                  </button>
+                  <button 
+                    onClick={() => executeRemove(activeActionIngredient)}
+                    style={{ padding: '16px', borderRadius: '12px', backgroundColor: '#fff7ed', color: '#c2410c', fontWeight: '700', border: 'none', fontSize: '16px' }}
+                  >
+                    Remove {activeActionTargetIds.length > 1 ? 'Group' : 'Ingredient'}
+                  </button>
+                </>
               )}
-              <button 
-                onClick={() => handleSwipeLeft(activeActionIngredient)}
-                style={{ padding: '16px', borderRadius: '12px', backgroundColor: activeActionIngredient.removed && activeActionTargetIds.length === 1 ? 'var(--accent-green-light)' : '#fff7ed', color: activeActionIngredient.removed && activeActionTargetIds.length === 1 ? 'var(--accent-green)' : '#c2410c', fontWeight: '700', border: 'none', fontSize: '16px' }}
-              >
-                {activeActionIngredient.edited || activeActionIngredient.replacedIds ? 'Reset' : (activeActionIngredient.removed && activeActionTargetIds.length === 1 ? 'Restore' : 'Remove')} {activeActionTargetIds.length > 1 ? 'Group' : 'Ingredient'}
-              </button>
               <button 
                 onClick={() => {
                   setIsActionMenuOpen(false);

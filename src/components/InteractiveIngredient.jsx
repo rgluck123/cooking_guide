@@ -1,12 +1,22 @@
 import React, { useState, useRef } from 'react';
 import { Square, CheckSquare } from 'lucide-react';
 
-const InteractiveIngredient = ({ item, onSwipeLeft, onSwipeRight, onLongPress, isSelectMode, isSelected, onToggleSelect }) => {
-  const [offsetX, setOffsetX] = useState(0);
+const InteractiveIngredient = ({ item, onSwipeLeft, onSwipeRight, onLongPress, isSelectMode, isSelected, onToggleSelect, groupOffsetX, onGroupDrag, onGroupDragEnd }) => {
+  const [localOffsetX, setLocalOffsetX] = useState(0);
   const startXRef = useRef(0);
   const currentXRef = useRef(0);
   const longPressTimer = useRef(null);
   const isDragging = useRef(false);
+
+  const offsetX = groupOffsetX !== undefined ? groupOffsetX : localOffsetX;
+
+  const updateOffset = (val) => {
+    if (groupOffsetX !== undefined && onGroupDrag) {
+      onGroupDrag(val);
+    } else {
+      setLocalOffsetX(val);
+    }
+  };
 
   const handleTouchStart = (e) => {
     startXRef.current = e.touches[0].clientX;
@@ -17,7 +27,7 @@ const InteractiveIngredient = ({ item, onSwipeLeft, onSwipeRight, onLongPress, i
       if (Math.abs(currentXRef.current - startXRef.current) < 10) {
         onLongPress(item);
         isDragging.current = false;
-        setOffsetX(0);
+        updateOffset(0);
       }
     }, 500);
   };
@@ -32,16 +42,16 @@ const InteractiveIngredient = ({ item, onSwipeLeft, onSwipeRight, onLongPress, i
       longPressTimer.current = null;
     }
 
-    if (Math.abs(deltaX) < 15) {
-      setOffsetX(0);
+    if (Math.abs(deltaX) < 20) {
+      updateOffset(0);
       return;
     }
 
-    const adjustedDelta = deltaX > 0 ? deltaX - 15 : deltaX + 15;
+    const adjustedDelta = (deltaX > 0 ? deltaX - 20 : deltaX + 20) * 0.4;
 
-    if (adjustedDelta > 100) setOffsetX(100);
-    else if (adjustedDelta < -100) setOffsetX(-100);
-    else setOffsetX(adjustedDelta);
+    if (adjustedDelta > 100) updateOffset(100);
+    else if (adjustedDelta < -100) updateOffset(-100);
+    else updateOffset(adjustedDelta);
   };
 
   const handleTouchEnd = () => {
@@ -53,13 +63,17 @@ const InteractiveIngredient = ({ item, onSwipeLeft, onSwipeRight, onLongPress, i
     if (!isDragging.current) return;
     isDragging.current = false;
     
-    if (offsetX < -60) {
+    if (offsetX < -50) {
       onSwipeLeft(item);
-    } else if (offsetX > 60) {
+    } else if (offsetX > 50) {
       onSwipeRight(item);
     }
     
-    setOffsetX(0);
+    if (groupOffsetX !== undefined && onGroupDragEnd) {
+      onGroupDragEnd();
+    } else {
+      setLocalOffsetX(0);
+    }
   };
 
   const handleMouseDown = (e) => {
@@ -71,7 +85,7 @@ const InteractiveIngredient = ({ item, onSwipeLeft, onSwipeRight, onLongPress, i
       if (Math.abs(currentXRef.current - startXRef.current) < 10) {
         onLongPress(item);
         isDragging.current = false;
-        setOffsetX(0);
+        updateOffset(0);
       }
     }, 500);
   };
@@ -86,16 +100,16 @@ const InteractiveIngredient = ({ item, onSwipeLeft, onSwipeRight, onLongPress, i
       longPressTimer.current = null;
     }
 
-    if (Math.abs(deltaX) < 15) {
-      setOffsetX(0);
+    if (Math.abs(deltaX) < 20) {
+      updateOffset(0);
       return;
     }
 
-    const adjustedDelta = deltaX > 0 ? deltaX - 15 : deltaX + 15;
+    const adjustedDelta = (deltaX > 0 ? deltaX - 20 : deltaX + 20) * 0.4;
     
-    if (adjustedDelta > 100) setOffsetX(100);
-    else if (adjustedDelta < -100) setOffsetX(-100);
-    else setOffsetX(adjustedDelta);
+    if (adjustedDelta > 100) updateOffset(100);
+    else if (adjustedDelta < -100) updateOffset(-100);
+    else updateOffset(adjustedDelta);
   };
 
   const handleMouseUp = () => {
@@ -103,12 +117,17 @@ const InteractiveIngredient = ({ item, onSwipeLeft, onSwipeRight, onLongPress, i
     if (!isDragging.current) return;
     isDragging.current = false;
     
-    if (offsetX < -60) {
+    if (offsetX < -50) {
       onSwipeLeft(item);
-    } else if (offsetX > 60) {
+    } else if (offsetX > 50) {
       onSwipeRight(item);
     }
-    setOffsetX(0);
+
+    if (groupOffsetX !== undefined && onGroupDragEnd) {
+      onGroupDragEnd();
+    } else {
+      setLocalOffsetX(0);
+    }
   };
 
   const handleMouseLeave = () => {
@@ -121,24 +140,29 @@ const InteractiveIngredient = ({ item, onSwipeLeft, onSwipeRight, onLongPress, i
   let bgIndicator = 'transparent';
   let indicatorText = '';
 
-  if (offsetX < -30) {
+  if (offsetX < -20) {
+    if (item.removed) {
+      bgIndicator = 'var(--accent-green-light)';
+      indicatorText = 'Restore';
+    } else {
+      bgIndicator = '#fff7ed';
+      indicatorText = 'Remove';
+    }
+  } else if (offsetX > 20) {
     if (isSubbed) {
-      bgIndicator = '#fff7ed'; // Orange-ish warning
+      bgIndicator = '#fff7ed';
       indicatorText = 'Reset';
     } else {
-      bgIndicator = item.removed ? 'var(--accent-green-light)' : '#fff7ed';
-      indicatorText = item.removed ? 'Restore' : 'Remove';
+      bgIndicator = 'var(--accent-green-light)';
+      indicatorText = 'Substitute';
     }
-  } else if (offsetX > 30) {
-    bgIndicator = 'var(--accent-green-light)';
-    indicatorText = 'Substitute';
   }
 
-  const indicatorColor = (offsetX < -30 && !item.removed && !isSubbed) || (offsetX < -30 && isSubbed) ? '#c2410c' : 'var(--accent-green)';
+  const indicatorColor = bgIndicator === '#fff7ed' ? '#c2410c' : 'var(--accent-green)';
 
   return (
     <div style={{ position: 'relative', marginBottom: '12px', borderRadius: '12px', overflow: 'hidden', backgroundColor: bgIndicator }}>
-      <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: offsetX > 0 ? 'flex-start' : 'flex-end', padding: '0 20px', fontWeight: '700', color: indicatorColor, opacity: Math.abs(offsetX) / 60 }}>
+      <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: offsetX > 0 ? 'flex-start' : 'flex-end', padding: '0 20px', fontWeight: '700', color: indicatorColor, opacity: Math.abs(offsetX) / 50 }}>
         {indicatorText}
       </div>
 
@@ -171,7 +195,7 @@ const InteractiveIngredient = ({ item, onSwipeLeft, onSwipeRight, onLongPress, i
           {isSelectMode ? (
             <div 
               onClick={(e) => { e.stopPropagation(); onToggleSelect(item.id); }} 
-              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', color: isSelected ? 'var(--accent-green)' : 'var(--border)', transition: 'color 0.2s', width: '24px', height: '24px' }}
+              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', color: isSelected ? 'var(--accent-green)' : '#A0A0A0', transition: 'color 0.4s ease', width: '24px', height: '24px' }}
             >
               {isSelected ? <CheckSquare size={24} /> : <Square size={24} />}
             </div>

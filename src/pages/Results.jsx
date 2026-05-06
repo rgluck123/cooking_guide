@@ -13,11 +13,11 @@ const Results = () => {
   const [searchTerm, setSearchTerm] = useState(locationState.query ?? '');
 
   const baseResults = [
-    { id: '1', title: 'White Bean Basil Chicken Chili', time: '70', protein: 'Chicken', difficulty: 'Intermediate', image: 'https://images.unsplash.com/photo-1552611052-33e04de081de?auto=format&fit=crop&w=400&q=80' },
-    { id: '2', title: 'Veggie & Rice Stir-Fry', time: '65', protein: 'Vegetarian', difficulty: 'Beginner', image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=400&q=80' },
-    { id: 'lebanese-spicy-chicken', title: 'Lebanese Spicy Chicken', time: '45', protein: 'Chicken', difficulty: 'Intermediate', image: 'https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?auto=format&fit=crop&w=400&q=80' },
-    { id: '3', title: 'Turkey Tacos', time: '45', protein: 'Chicken', difficulty: 'Beginner', image: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=400&q=80' },
-    { id: '4', title: 'Lebanese Fattoush Salad', time: '20', protein: 'Vegetarian', difficulty: 'Beginner', image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=400&q=80' }
+    { id: '1', title: 'White Bean Basil Chicken Chili', time: '70', protein: 'Chicken', difficulty: 'Intermediate', cuisine: 'Mexican', image: 'https://images.unsplash.com/photo-1552611052-33e04de081de?auto=format&fit=crop&w=400&q=80' },
+    { id: '2', title: 'Veggie & Rice Stir-Fry', time: '65', protein: 'Vegetarian', difficulty: 'Beginner', cuisine: 'Japanese', image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=400&q=80' },
+    { id: 'lebanese-spicy-chicken', title: 'Lebanese Spicy Chicken', time: '45', protein: 'Chicken', difficulty: 'Intermediate', cuisine: 'Lebanese', image: 'https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?auto=format&fit=crop&w=400&q=80' },
+    { id: '3', title: 'Turkey Tacos', time: '45', protein: 'Chicken', difficulty: 'Beginner', cuisine: 'Mexican', image: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=400&q=80' },
+    { id: '4', title: 'Lebanese Fattoush Salad', time: '20', protein: 'Vegetarian', difficulty: 'Beginner', cuisine: 'Lebanese', image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=400&q=80' }
   ];
 
   const allResults = useMemo(() => {
@@ -47,6 +47,7 @@ const Results = () => {
          time: saved.time?.toString().replace(' mins', '').trim() || '',
          protein: dynamicProtein,
          difficulty: saved.difficulty || 'Intermediate',
+         cuisine: saved.cuisine || 'Lebanese', // since the only savable right now is lebanese
          image: saved.image,
          isModified: hasModifications,
          isSavedVersion: true
@@ -77,7 +78,10 @@ const Results = () => {
         if (!locationState.protein.includes(recipe.protein)) return false;
       }
 
-      // Note: Time and Portions filtering could be added here similarly if needed in the future
+      // 4. Cuisine Filter (from Home page chips)
+      if (locationState.cuisine) {
+        if (recipe.cuisine !== locationState.cuisine) return false;
+      }
 
       return true;
     });
@@ -96,7 +100,7 @@ const Results = () => {
           <ChevronLeft size={28} color="var(--text)" />
         </button>
         <h1 style={{ fontSize: '20px', fontWeight: '700', textAlign: 'center', flex: 1, padding: '0 8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {searchTerm.trim() ? `Results for "${searchTerm.trim()}"` : 'Results'}
+          {searchTerm.trim() ? `Results for "${searchTerm.trim()}"` : locationState.cuisine ? `${locationState.cuisine} Recipes` : 'Results'}
         </h1>
         <button onClick={() => navigate('/filter')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '-8px' }}>
           <SlidersHorizontal size={24} color="var(--text)" />

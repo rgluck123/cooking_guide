@@ -142,7 +142,7 @@ const Home = () => {
           {cuisines.map(c => (
             <div key={c.name} onClick={() => {
               if (c.name === 'Lebanese') {
-                navigate('/results', { state: { query: 'Lebanese' } });
+                navigate('/results', { state: { cuisine: 'Lebanese' } });
               } else {
                 navigate('/under-construction');
               }
