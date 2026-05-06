@@ -30,9 +30,7 @@ const LiveCooking = () => {
   const [modifyInput, setModifyInput] = useState({ name: '', amount: '', notes: '' });
   const [voiceEnabled, setVoiceEnabled] = useState(liveCookingDefaults.micEnabled);
   const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(liveCookingDefaults.voiceOverEnabled);
-  // Speech (speaking) support and recognition (listening) support are different APIs.
-  const [speechSupported, setSpeechSupported] = useState(typeof window !== 'undefined' && 'speechSynthesis' in window);
-  const [recognitionSupported, setRecognitionSupported] = useState(true);
+  const [voiceSupported, setVoiceSupported] = useState(true);
   const recognitionRef = useRef(null);
   const loopTimeoutRef = useRef(null);
   const touchStartX = useRef(0);
@@ -58,8 +56,6 @@ const LiveCooking = () => {
   const step = visibleSteps[currentStepIndex] || visibleSteps[0];
   const isFirstStep = currentStepIndex === 0;
   const isLastStep = currentStepIndex === visibleSteps.length - 1;
-  
-  // Progress Bar should reflect position in ALL VISIBLE steps (ignoring testing mode skip)
   const progressPercent = useMemo(() => {
     if (allVisibleSteps.length === 0 || !step) return 0;
     const actualStepIndex = allVisibleSteps.findIndex(s => s.id === step.id);
@@ -116,48 +112,15 @@ const LiveCooking = () => {
   const prevStep = () => !isFirstStep && setCurrentStepIndex(prev => prev - 1);
 
   const speakStep = useCallback(() => {
-    if (!speechSupported || !voiceOutputEnabled || !step) return;
-
-    const speakNow = () => {
-      const utterance = new SpeechSynthesisUtterance(`${step.title}. ${step.instruction}`);
-      utterance.rate = 0.95;
-      utterance.pitch = 1;
-      utterance.volume = 1;
-
-      // Try to pick an English voice if available to avoid device-default non-English voices
-      try {
-        const voices = window.speechSynthesis.getVoices() || [];
-        const enVoice = voices.find(v => v.lang && /^en\b/.test(v.lang)) || voices.find(v => v.lang && v.lang.startsWith('en')) || voices[0];
-        if (enVoice) {
-          utterance.voice = enVoice;
-          utterance.lang = enVoice.lang || 'en-US';
-        } else {
-          utterance.lang = 'en-US';
-        }
-      } catch (e) {
-        utterance.lang = 'en-US';
-      }
-
-      try { window.speechSynthesis.cancel(); } catch(e) { /* ignore */ }
-      window.speechSynthesis.speak(utterance);
-    };
-
-    // Voices may not be loaded immediately in some browsers (esp. Safari). Wait for voiceschanged if empty.
-    try {
-      const voices = window.speechSynthesis.getVoices();
-      if (!voices || voices.length === 0) {
-        const onVoicesChanged = () => {
-          window.speechSynthesis.removeEventListener('voiceschanged', onVoicesChanged);
-          speakNow();
-        };
-        window.speechSynthesis.addEventListener('voiceschanged', onVoicesChanged);
-      } else {
-        speakNow();
-      }
-    } catch (e) {
-      speakNow();
-    }
-  }, [speechSupported, voiceOutputEnabled, step]);
+    if (!voiceSupported || !voiceOutputEnabled || !step) return;
+    const utterance = new SpeechSynthesisUtterance(`${step.title}. ${step.instruction}`);
+    utterance.lang = 'en-US';
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    try { window.speechSynthesis.cancel(); } catch(e) { /* ignore */ }
+    window.speechSynthesis.speak(utterance);
+  }, [voiceSupported, voiceOutputEnabled, step]);
 
   const currentStepIndexRef = useRef(currentStepIndex);
   const showSavePromptRef = useRef(showSavePrompt);
@@ -173,8 +136,7 @@ const LiveCooking = () => {
     if (!activeRecipe || visibleSteps.length === 0) return;
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      // Listening not available (e.g., Safari iOS). Keep speech synthesis enabled.
-      setRecognitionSupported(false);
+      setVoiceSupported(false);
       return;
     }
 
@@ -196,7 +158,6 @@ const LiveCooking = () => {
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript.toLowerCase().trim();
       
-      // Priority: if modify modal is open, allow save/cancel voice commands
       if (isModifyModalOpen) {
         if (/(save changes|save|confirm|yes)/i.test(transcript)) {
           handleSaveModification();
@@ -215,16 +176,6 @@ const LiveCooking = () => {
           setCurrentStepIndex(prev => prev + 1);
         }
       }
-      else if (/(finish|complete|finished)/i.test(transcript)) {
-        // Jump to finish flow
-        if (currentStepIndexRef.current === visibleSteps.length - 1) {
-          setShowSavePrompt(true);
-        } else {
-          setCurrentStepIndex(visibleSteps.length - 1);
-          // small delay to allow UI to update then show prompt
-          setTimeout(() => setShowSavePrompt(true), 250);
-        }
-      }
       else if (/(previous step|previous|back)/i.test(transcript)) {
         if (isModifyModalOpen || isDeboneModalOpen || showSavePromptRef.current) {
           setIsModifyModalOpen(false);
@@ -240,6 +191,22 @@ const LiveCooking = () => {
       else if (/(modify|do modification)/i.test(transcript)) {
         setIsModifyModalOpen(true);
       }
+      else if (transcript.startsWith('add ') || transcript.startsWith('include ')) {
+        const itemName = transcript.replace(/^(add|include) /, '').trim();
+        if (itemName) {
+          setModifications(prev => [...prev, {
+            id: Date.now(),
+            name: itemName,
+            amount: '',
+            notes: '',
+            stepId: step?.id
+          }]);
+          if (voiceOutputEnabled) {
+            const utterance = new SpeechSynthesisUtterance(`Added ${itemName}`);
+            window.speechSynthesis.speak(utterance);
+          }
+        }
+      }
       else if (/(unmute|allow voice)/i.test(transcript)) {
         setVoiceOutputEnabled(true);
       }
@@ -252,7 +219,7 @@ const LiveCooking = () => {
       }
       else if (/(yes|sure|save it)/i.test(transcript)) {
         if (showSavePromptRef.current) {
-          clearProgress(recipeId);
+          // DO NOT clearProgress here. Wait until actual save.
           addRecent({
             id: 'authentic-lebanese-chicken',
             name: 'Authentic Lebanese Chicken with Rice',
@@ -275,10 +242,14 @@ const LiveCooking = () => {
       if (loopTimeoutRef.current) clearTimeout(loopTimeoutRef.current);
       try { recognitionRef.current?.abort(); } catch(e) { /* ignore */ }
     };
-  }, [voiceEnabled, activeRecipe, visibleSteps.length, addRecent, clearProgress, navigate, recipeId, speakStep, handleExit, isModifyModalOpen, isDeboneModalOpen, handleSaveModification]); 
+  }, [voiceEnabled, activeRecipe, visibleSteps.length, addRecent, navigate, recipeId, speakStep, handleExit, isModifyModalOpen, isDeboneModalOpen, handleSaveModification, voiceOutputEnabled, step]); 
 
+  // Use a slight delay on initial mount to ensure Speech Synthesis is ready to speak the first step.
   useEffect(() => {
-    speakStep();
+    const timer = setTimeout(() => {
+      speakStep();
+    }, 500);
+    return () => clearTimeout(timer);
   }, [currentStepIndex, speakStep]);
 
   const toggleVoiceListening = async () => {
@@ -306,18 +277,17 @@ const LiveCooking = () => {
   return (
     <div 
       style={{ height: '100dvh', backgroundColor: 'var(--bg)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
-          onTouchStart={(e) => {
-            // Disable swipe navigation while modals or prompts are open
-            if (isModifyModalOpen || isDeboneModalOpen || isAddIngredientModalOpen || showSavePrompt) return;
-            touchStartX.current = e.touches[0].clientX;
-          }}
-          onTouchEnd={(e) => {
-            if (isModifyModalOpen || isDeboneModalOpen || isAddIngredientModalOpen || showSavePrompt) return;
-            const touchEndX = e.changedTouches[0].clientX;
-            const diffX = touchStartX.current - touchEndX;
-            if (diffX > 50) nextStep();
-            if (diffX < -50) prevStep();
-          }}
+      onTouchStart={(e) => { 
+        if (isModifyModalOpen || isDeboneModalOpen || showSavePrompt) return;
+        touchStartX.current = e.touches[0].clientX; 
+      }}
+      onTouchEnd={(e) => {
+        if (isModifyModalOpen || isDeboneModalOpen || showSavePrompt) return;
+        const touchEndX = e.changedTouches[0].clientX;
+        const diffX = touchStartX.current - touchEndX;
+        if (diffX > 50) nextStep();
+        if (diffX < -50) prevStep();
+      }}
     >
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
         <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: 'calc(20px + env(safe-area-inset-top)) 20px 12px', gap: '12px' }}>
@@ -439,8 +409,11 @@ const LiveCooking = () => {
       </div>
 
       {isModifyModalOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)', zIndex: 100, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', padding: '20px' }}>
-          <div style={{ backgroundColor: 'var(--surface)', borderRadius: '25px', padding: '20px', maxWidth: '480px', width: 'calc(100% - 40px)', maxHeight: '80vh', overflowY: 'auto', border: '1px solid #1b1b1b' }}>
+        <div 
+          onClick={() => setIsModifyModalOpen(false)}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)', zIndex: 100, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', padding: '20px' }}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: 'var(--surface)', borderRadius: '25px', padding: '20px', maxWidth: '480px', width: 'calc(100% - 40px)', maxHeight: '80vh', overflowY: 'auto', border: '1px solid #1b1b1b' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--text)', margin: 0, fontFamily: 'var(--heading)' }}>Modify Ingredient</h2>
               <button onClick={() => setIsModifyModalOpen(false)} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: 'var(--text)', padding: 0 }}>✕</button>
@@ -470,7 +443,7 @@ const LiveCooking = () => {
             <div style={{ display: 'flex', gap: '16px', flexDirection: 'column' }}>
               <button 
                 onClick={() => {
-                  // Keep progress so 'Back' works correctly
+                  // Do NOT clear progress here. We want to be able to navigate back exactly.
                   addRecent({ id: 'authentic-lebanese-chicken', name: 'Authentic Lebanese Chicken with Rice', image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=80', time: '40 mins', portions: '2 portions' });
                   setShowSavePrompt(false);
                   navigate('/save-recipe', { state: { modifications: modificationsRef.current } });
@@ -482,11 +455,6 @@ const LiveCooking = () => {
           </div>
         </div>
       )}
-
-      <DeboningModal 
-        isOpen={isDeboneModalOpen}
-        onClose={() => setIsDeboneModalOpen(false)}
-      />
     </div>
   );
 };

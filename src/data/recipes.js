@@ -22,7 +22,7 @@ export const initialRecipes = {
         id: 1,
         title: "Cook the rice",
         instruction: "Rinse 190g white rice and add to a pot with 380ml water. Bring to a boil, then reduce heat and simmer covered for 18-20 minutes until tender.",
-        image: "https://images.unsplash.com/photo-1495195134817-aeb325a55b65?auto=format&fit=crop&w=400&q=80",
+        image: "/cooking_guide/images/authentic-lebanese-chicken-steps/cook-the-rice.png",
         hasTimer: true,
         timerSeconds: 1200
       },
@@ -44,7 +44,7 @@ export const initialRecipes = {
         id: 4,
         title: "Heat oil in the pan",
         instruction: "Heat oil in a large pan over medium heat and add the chopped onion. Sauté for 2-3 minutes until translucent and fragrant.",
-        image: "https://images.unsplash.com/photo-1523986371872-9d3ba2e2f642?auto=format&fit=crop&w=400&q=80",
+        image: "/cooking_guide/images/authentic-lebanese-chicken-steps/heat-the-oil-pan.png",
         hasTimer: true,
         timerSeconds: 180
       },
@@ -59,7 +59,7 @@ export const initialRecipes = {
         id: 6,
         title: "Stir for 1 minute",
         instruction: "Keep stirring the spices with the onions to toast them and release their aroma.",
-        image: "https://images.unsplash.com/photo-1577615771461-98d5d10fbc1e?auto=format&fit=crop&w=400&q=80",
+        image: "/cooking_guide/images/authentic-lebanese-chicken-steps/stir.png",
         hasTimer: true,
         timerSeconds: 60
       },
@@ -96,7 +96,7 @@ export const initialRecipes = {
         id: 11,
         title: "Plate and serve",
         instruction: "Divide the rice between plates and top with the chicken mixture. Serve hot with lemon slices on the side.",
-        image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=80",
+        image: "/cooking_guide/images/authentic-lebanese-chicken-steps/plate-and-serve.png",
         hasTimer: false
       }
     ]
