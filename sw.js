@@ -4,7 +4,7 @@ importScripts('https://storage.googleapis.com/workbox-cdn/releases/7.4.1/workbox
 
 if (workbox) {
   // Precache manifest injected by Workbox injectManifest
-  workbox.precaching.precacheAndRoute([{"revision":"5c1dc8ca11dd7f81fa8f2b6a9cd38405","url":"manifest.json"},{"revision":"1ee9b0050a5daacec428c3a8fe680613","url":"index.html"},{"revision":"3b4fcfcf393eca4d264dca4a4663bc37","url":"icons.svg"},{"revision":"7e840862161341271697daa99a40d76b","url":"favicon.svg"},{"revision":"4ee3b162af4c317273607d3cdec757f2","url":"assets/index-CDcObVxP.js"},{"revision":"28e106128433182ae28d13ce81330d44","url":"assets/index-BPAhezWZ.css"}] || []);
+  workbox.precaching.precacheAndRoute([{"revision":"5c1dc8ca11dd7f81fa8f2b6a9cd38405","url":"manifest.json"},{"revision":"1ed1fb0bcc254af6cc62db9f70bd8dca","url":"index.html"},{"revision":"3b4fcfcf393eca4d264dca4a4663bc37","url":"icons.svg"},{"revision":"7e840862161341271697daa99a40d76b","url":"favicon.svg"},{"revision":"06c1f45ce7a186841cc3ea64a16fc181","url":"assets/index-DrB3MBsV.js"},{"revision":"28e106128433182ae28d13ce81330d44","url":"assets/index-BPAhezWZ.css"}] || []);
 
   // Skip waiting on install
   self.addEventListener('install', (event) => {
