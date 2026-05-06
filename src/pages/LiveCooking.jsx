@@ -127,12 +127,22 @@ const LiveCooking = () => {
 
   const speakStep = useCallback(() => {
     if (!voiceSupported || !voiceOutputEnabled || !step) return;
+    
+    try { window.speechSynthesis.cancel(); } catch(e) { /* ignore */ }
+    
     const utterance = new SpeechSynthesisUtterance(`${step.title}. ${step.instruction}`);
+    
+    // Explicitly find an English voice to avoid system default (e.g. Polish)
+    const voices = window.speechSynthesis.getVoices();
+    const englishVoice = voices.find(v => v.lang.startsWith('en')) || voices.find(v => v.lang.includes('en'));
+    if (englishVoice) {
+      utterance.voice = englishVoice;
+    }
+    
     utterance.lang = 'en-US';
     utterance.rate = 0.95;
     utterance.pitch = 1;
     utterance.volume = 1;
-    try { window.speechSynthesis.cancel(); } catch(e) { /* ignore */ }
     window.speechSynthesis.speak(utterance);
   }, [voiceSupported, voiceOutputEnabled, step]);
 
@@ -313,13 +323,22 @@ const LiveCooking = () => {
     };
   }, [voiceEnabled, activeRecipe, visibleSteps.length, addRecent, navigate, recipeId, speakStep, handleExit, isModifyModalOpen, isDeboneModalOpen, handleSaveModification, voiceOutputEnabled, step]); 
 
-  // Use a slight delay on initial mount to ensure Speech Synthesis is ready to speak the first step.
+  // Speak the step whenever it changes (including initial load)
   useEffect(() => {
+    if (!step) return;
+    
+    // We use a timeout to ensure SpeechSynthesis is fully ready and to debounce rapid changes
     const timer = setTimeout(() => {
+      // Only speak automatically if voice output is already enabled
+      // If the user just enabled it, we don't want it to start speaking immediately
       speakStep();
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [currentStepIndex, speakStep]);
+    }, 400);
+    
+    return () => {
+      clearTimeout(timer);
+      try { window.speechSynthesis.cancel(); } catch(e) { /* ignore */ }
+    };
+  }, [step?.id, speakStep]); // Removed voiceOutputEnabled from dependencies
 
   const toggleVoiceListening = async () => {
     if (!voiceEnabled) {

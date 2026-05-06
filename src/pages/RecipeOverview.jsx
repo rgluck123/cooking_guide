@@ -476,44 +476,21 @@ const RecipeOverview = () => {
             )}
           </div>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div>
             {orderedIngredients.filter(i => !i.hidden).map(item => (
-              <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ flex: 1 }}>
-                  <InteractiveIngredient 
-                    item={item} 
-                    onSwipeLeft={handleSwipeLeft}
-                    onSwipeRight={handleSwipeRight}
-                    onLongPress={handleLongPress}
-                    isSelectMode={isSelectMode}
-                    isSelected={selectedIngredientIds.includes(item.id)}
-                    onToggleSelect={handleToggleSelect}
-                    groupOffsetX={selectedIngredientIds.includes(item.id) && selectedIngredientIds.length > 1 ? groupSwipeOffset : undefined}
-                    onGroupDrag={(offset) => setGroupSwipeOffset(offset)}
-                    onGroupDragEnd={() => setGroupSwipeOffset(0)}
-                  />
-                </div>
-                {item.originalName === 'Chicken Thighs' && !isSelectMode && !item.removed && (
-                  <button 
-                    onClick={() => setIsDeboneModalOpen(true)}
-                    style={{ 
-                      display: 'flex', alignItems: 'center', gap: '4px', 
-                      padding: '6px 10px', borderRadius: '12px', 
-                      border: '1.5px solid var(--accent-green)', 
-                      backgroundColor: 'white',
-                      color: 'var(--accent-green)',
-                      fontSize: '13px', fontWeight: '700',
-                      cursor: 'pointer',
-                      flexShrink: 0,
-                      height: '40px',
-                      boxShadow: 'var(--shadow)'
-                    }}
-                  >
-                    <Info size={14} />
-                    More
-                  </button>
-                )}
-              </div>
+              <InteractiveIngredient 
+                key={item.id} 
+                item={item} 
+                onSwipeLeft={handleSwipeLeft}
+                onSwipeRight={handleSwipeRight}
+                onLongPress={handleLongPress}
+                isSelectMode={isSelectMode}
+                isSelected={selectedIngredientIds.includes(item.id)}
+                onToggleSelect={handleToggleSelect}
+                groupOffsetX={selectedIngredientIds.includes(item.id) && selectedIngredientIds.length > 1 ? groupSwipeOffset : undefined}
+                onGroupDrag={(offset) => setGroupSwipeOffset(offset)}
+                onGroupDragEnd={() => setGroupSwipeOffset(0)}
+              />
             ))}
           </div>
 
@@ -561,9 +538,19 @@ const RecipeOverview = () => {
                       {step.id === 2 && (
                         <button 
                           onClick={() => setIsDeboneModalOpen(true)}
-                          style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          style={{ 
+                            display: 'flex', alignItems: 'center', gap: '4px', 
+                            padding: '4px 8px', borderRadius: '8px', 
+                            border: '1.5px solid var(--accent-green)', 
+                            backgroundColor: 'white',
+                            color: 'var(--accent-green)',
+                            fontSize: '11px', fontWeight: '700',
+                            cursor: 'pointer',
+                            boxShadow: 'var(--shadow)'
+                          }}
                         >
-                          <Info size={16} color="var(--accent-green)" />
+                          <Info size={12} color="var(--accent-green)" />
+                          More
                         </button>
                       )}
                     </div>
