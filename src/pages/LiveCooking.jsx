@@ -30,7 +30,9 @@ const LiveCooking = () => {
   const [modifyInput, setModifyInput] = useState({ name: '', amount: '', notes: '' });
   const [voiceEnabled, setVoiceEnabled] = useState(liveCookingDefaults.micEnabled);
   const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(liveCookingDefaults.voiceOverEnabled);
-  const [voiceSupported, setVoiceSupported] = useState(true);
+  // Speech (speaking) support and recognition (listening) support are different APIs.
+  const [speechSupported, setSpeechSupported] = useState(typeof window !== 'undefined' && 'speechSynthesis' in window);
+  const [recognitionSupported, setRecognitionSupported] = useState(true);
   const recognitionRef = useRef(null);
   const loopTimeoutRef = useRef(null);
   const touchStartX = useRef(0);
@@ -114,15 +116,48 @@ const LiveCooking = () => {
   const prevStep = () => !isFirstStep && setCurrentStepIndex(prev => prev - 1);
 
   const speakStep = useCallback(() => {
-    if (!voiceSupported || !voiceOutputEnabled || !step) return;
-    const utterance = new SpeechSynthesisUtterance(`${step.title}. ${step.instruction}`);
-    utterance.lang = 'en-US';
-    utterance.rate = 0.95;
-    utterance.pitch = 1;
-    utterance.volume = 1;
-    try { window.speechSynthesis.cancel(); } catch(e) { /* ignore */ }
-    window.speechSynthesis.speak(utterance);
-  }, [voiceSupported, voiceOutputEnabled, step]);
+    if (!speechSupported || !voiceOutputEnabled || !step) return;
+
+    const speakNow = () => {
+      const utterance = new SpeechSynthesisUtterance(`${step.title}. ${step.instruction}`);
+      utterance.rate = 0.95;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+
+      // Try to pick an English voice if available to avoid device-default non-English voices
+      try {
+        const voices = window.speechSynthesis.getVoices() || [];
+        const enVoice = voices.find(v => v.lang && /^en\b/.test(v.lang)) || voices.find(v => v.lang && v.lang.startsWith('en')) || voices[0];
+        if (enVoice) {
+          utterance.voice = enVoice;
+          utterance.lang = enVoice.lang || 'en-US';
+        } else {
+          utterance.lang = 'en-US';
+        }
+      } catch (e) {
+        utterance.lang = 'en-US';
+      }
+
+      try { window.speechSynthesis.cancel(); } catch(e) { /* ignore */ }
+      window.speechSynthesis.speak(utterance);
+    };
+
+    // Voices may not be loaded immediately in some browsers (esp. Safari). Wait for voiceschanged if empty.
+    try {
+      const voices = window.speechSynthesis.getVoices();
+      if (!voices || voices.length === 0) {
+        const onVoicesChanged = () => {
+          window.speechSynthesis.removeEventListener('voiceschanged', onVoicesChanged);
+          speakNow();
+        };
+        window.speechSynthesis.addEventListener('voiceschanged', onVoicesChanged);
+      } else {
+        speakNow();
+      }
+    } catch (e) {
+      speakNow();
+    }
+  }, [speechSupported, voiceOutputEnabled, step]);
 
   const currentStepIndexRef = useRef(currentStepIndex);
   const showSavePromptRef = useRef(showSavePrompt);
@@ -138,7 +173,8 @@ const LiveCooking = () => {
     if (!activeRecipe || visibleSteps.length === 0) return;
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      setVoiceSupported(false);
+      // Listening not available (e.g., Safari iOS). Keep speech synthesis enabled.
+      setRecognitionSupported(false);
       return;
     }
 
@@ -160,11 +196,33 @@ const LiveCooking = () => {
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript.toLowerCase().trim();
       
+      // Priority: if modify modal is open, allow save/cancel voice commands
+      if (isModifyModalOpen) {
+        if (/(save changes|save|confirm|yes)/i.test(transcript)) {
+          handleSaveModification();
+          return;
+        }
+        if (/(cancel|close|dismiss|no)/i.test(transcript)) {
+          setIsModifyModalOpen(false);
+          return;
+        }
+      }
+
       if (/(next step|next|done|ok done)/i.test(transcript)) {
         if (currentStepIndexRef.current === visibleSteps.length - 1) {
           setShowSavePrompt(true);
         } else {
           setCurrentStepIndex(prev => prev + 1);
+        }
+      }
+      else if (/(finish|complete|finished)/i.test(transcript)) {
+        // Jump to finish flow
+        if (currentStepIndexRef.current === visibleSteps.length - 1) {
+          setShowSavePrompt(true);
+        } else {
+          setCurrentStepIndex(visibleSteps.length - 1);
+          // small delay to allow UI to update then show prompt
+          setTimeout(() => setShowSavePrompt(true), 250);
         }
       }
       else if (/(previous step|previous|back)/i.test(transcript)) {
@@ -217,7 +275,7 @@ const LiveCooking = () => {
       if (loopTimeoutRef.current) clearTimeout(loopTimeoutRef.current);
       try { recognitionRef.current?.abort(); } catch(e) { /* ignore */ }
     };
-  }, [voiceEnabled, activeRecipe, visibleSteps.length, addRecent, clearProgress, navigate, recipeId, speakStep, handleExit, isModifyModalOpen, isDeboneModalOpen]); 
+  }, [voiceEnabled, activeRecipe, visibleSteps.length, addRecent, clearProgress, navigate, recipeId, speakStep, handleExit, isModifyModalOpen, isDeboneModalOpen, handleSaveModification]); 
 
   useEffect(() => {
     speakStep();
@@ -248,13 +306,18 @@ const LiveCooking = () => {
   return (
     <div 
       style={{ height: '100dvh', backgroundColor: 'var(--bg)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
-      onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
-      onTouchEnd={(e) => {
-        const touchEndX = e.changedTouches[0].clientX;
-        const diffX = touchStartX.current - touchEndX;
-        if (diffX > 50) nextStep();
-        if (diffX < -50) prevStep();
-      }}
+          onTouchStart={(e) => {
+            // Disable swipe navigation while modals or prompts are open
+            if (isModifyModalOpen || isDeboneModalOpen || isAddIngredientModalOpen || showSavePrompt) return;
+            touchStartX.current = e.touches[0].clientX;
+          }}
+          onTouchEnd={(e) => {
+            if (isModifyModalOpen || isDeboneModalOpen || isAddIngredientModalOpen || showSavePrompt) return;
+            const touchEndX = e.changedTouches[0].clientX;
+            const diffX = touchStartX.current - touchEndX;
+            if (diffX > 50) nextStep();
+            if (diffX < -50) prevStep();
+          }}
     >
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
         <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: 'calc(20px + env(safe-area-inset-top)) 20px 12px', gap: '12px' }}>

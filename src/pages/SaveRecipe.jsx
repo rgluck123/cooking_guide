@@ -15,7 +15,8 @@ const SaveRecipe = () => {
   // Voice States
   const [voiceEnabled, setVoiceEnabled] = useState(liveCookingDefaults.micEnabled);
   const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(liveCookingDefaults.voiceOverEnabled);
-  const [voiceSupported, setVoiceSupported] = useState(true);
+  const [speechSupported, setSpeechSupported] = useState(typeof window !== 'undefined' && 'speechSynthesis' in window);
+  const [recognitionSupported, setRecognitionSupported] = useState(true);
   const recognitionRef = useRef(null);
   const loopTimeoutRef = useRef(null);
 
@@ -82,12 +83,42 @@ const SaveRecipe = () => {
     // Clear the cooking progress ONLY on successful save
     clearProgress(recipeId);
 
-    if (voiceOutputEnabled) {
+    if (voiceOutputEnabled && speechSupported) {
       try { window.speechSynthesis.cancel(); } catch(e) { /* ignore */ }
-      const utterance = new SpeechSynthesisUtterance("Recipe saved successfully");
-      utterance.lang = 'en-US';
-      utterance.rate = 0.95;
-      window.speechSynthesis.speak(utterance);
+
+      const speakNow = () => {
+        const utterance = new SpeechSynthesisUtterance("Recipe saved successfully");
+        utterance.rate = 0.95;
+        // pick an English voice if available
+        try {
+          const voices = window.speechSynthesis.getVoices() || [];
+          const enVoice = voices.find(v => v.lang && /^en\b/.test(v.lang)) || voices.find(v => v.lang && v.lang.startsWith('en')) || voices[0];
+          if (enVoice) {
+            utterance.voice = enVoice;
+            utterance.lang = enVoice.lang || 'en-US';
+          } else {
+            utterance.lang = 'en-US';
+          }
+        } catch (e) {
+          utterance.lang = 'en-US';
+        }
+        window.speechSynthesis.speak(utterance);
+      };
+
+      try {
+        const voices = window.speechSynthesis.getVoices();
+        if (!voices || voices.length === 0) {
+          const onVoices = () => {
+            window.speechSynthesis.removeEventListener('voiceschanged', onVoices);
+            speakNow();
+          };
+          window.speechSynthesis.addEventListener('voiceschanged', onVoices);
+        } else {
+          speakNow();
+        }
+      } catch (e) {
+        speakNow();
+      }
     }
     
     setShowSuccess(true);
@@ -105,7 +136,7 @@ const SaveRecipe = () => {
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      setVoiceSupported(false);
+      setRecognitionSupported(false);
       return;
     }
 
