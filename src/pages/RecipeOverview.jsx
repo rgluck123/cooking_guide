@@ -597,6 +597,13 @@ const RecipeOverview = () => {
       }}>
         <button 
           onClick={() => {
+            // Prime speech synthesis for Safari/Mobile
+            try {
+              const silent = new SpeechSynthesisUtterance("");
+              silent.volume = 0;
+              window.speechSynthesis.speak(silent);
+            } catch(e) {}
+            
             clearProgress(activeRecipe.id);
             navigate('/live-cooking', { state: { recipeId: activeRecipe.id } });
           }}

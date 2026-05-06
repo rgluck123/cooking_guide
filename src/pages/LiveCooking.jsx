@@ -125,12 +125,13 @@ const LiveCooking = () => {
   };
   const prevStep = () => !isFirstStep && setCurrentStepIndex(prev => prev - 1);
 
-  const speakStep = useCallback(() => {
-    if (!voiceSupported || !voiceOutputEnabled || !step) return;
+  const speakStep = useCallback((customText) => {
+    if (!voiceSupported || !voiceOutputEnabled || (!step && !customText)) return;
     
     try { window.speechSynthesis.cancel(); } catch(e) { /* ignore */ }
     
-    const utterance = new SpeechSynthesisUtterance(`${step.title}. ${step.instruction}`);
+    const textToSpeak = customText || step.instruction;
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
     
     // Explicitly find an English voice to avoid system default (e.g. Polish)
     const voices = window.speechSynthesis.getVoices();
@@ -205,13 +206,22 @@ const LiveCooking = () => {
           setIsDeboneModalOpen(false);
           return;
         }
-        if (/(scroll down|next instructions|more|down)/i.test(transcript)) {
-          const modalContent = document.querySelector('[style*="overflowY: auto"]');
-          if (modalContent) {
-            modalContent.scrollBy({ top: 300, behavior: 'smooth' });
-          }
-          return;
+      }
+
+      if (/(scroll down|down|next screen|more)/i.test(transcript)) {
+        const scrollContainer = document.querySelector('[style*="overflowY: auto"]') || document.documentElement;
+        if (scrollContainer) {
+          scrollContainer.scrollBy({ top: 350, behavior: 'smooth' });
         }
+        return;
+      }
+      
+      if (/(scroll up|up|previous screen)/i.test(transcript)) {
+        const scrollContainer = document.querySelector('[style*="overflowY: auto"]') || document.documentElement;
+        if (scrollContainer) {
+          scrollContainer.scrollBy({ top: -350, behavior: 'smooth' });
+        }
+        return;
       }
 
       if (/(next step|next|done|ok done|go ahead|next screen|go further|i am ready|all done)/i.test(transcript)) {
@@ -236,13 +246,13 @@ const LiveCooking = () => {
       else if (/(modify|do modification|put modification)/i.test(transcript)) {
         setIsModifyModalOpen(true);
       }
-      else if (/(start|launch|set) (the )?timer|start (the )?countdown/i.test(transcript)) {
+      else if (/(start|launch|set|resume|continue|restart) (the )?timer|start (the )?countdown/i.test(transcript)) {
         timerRef.current?.start();
       }
       else if (/(pause|stop|halt) (the )?timer|pause|pause (the )?time|stop (the )?time/i.test(transcript)) {
         timerRef.current?.pause();
       }
-      else if (/reset (the )?(timer|time)/i.test(transcript)) {
+      else if (/(reset|restart) (the )?(timer|time)/i.test(transcript)) {
         timerRef.current?.reset();
       }
       else if (/(help|more info|more information|more instructions)/i.test(transcript)) {
@@ -323,14 +333,38 @@ const LiveCooking = () => {
     };
   }, [voiceEnabled, activeRecipe, visibleSteps.length, addRecent, navigate, recipeId, speakStep, handleExit, isModifyModalOpen, isDeboneModalOpen, handleSaveModification, voiceOutputEnabled, step]); 
 
-  // Speak the step whenever it changes (including initial load)
+  const voicesLoadedRef = useRef(false);
+
+  useEffect(() => {
+    const handleVoicesChanged = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0 && !voicesLoadedRef.current) {
+        voicesLoadedRef.current = true;
+        // If we are on the first step and haven't spoken yet, trigger it
+        if (step) speakStep();
+      }
+    };
+
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = handleVoicesChanged;
+    }
+    
+    // Call it once immediately in case voices are already there
+    handleVoicesChanged();
+
+    return () => {
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = null;
+      }
+    };
+  }, [step, speakStep]);
+
+  // Speak the step whenever it changes
   useEffect(() => {
     if (!step) return;
     
-    // We use a timeout to ensure SpeechSynthesis is fully ready and to debounce rapid changes
+    // We use a short timeout to ensure UI is rendered and voices are ready
     const timer = setTimeout(() => {
-      // Only speak automatically if voice output is already enabled
-      // If the user just enabled it, we don't want it to start speaking immediately
       speakStep();
     }, 400);
     
@@ -338,7 +372,13 @@ const LiveCooking = () => {
       clearTimeout(timer);
       try { window.speechSynthesis.cancel(); } catch(e) { /* ignore */ }
     };
-  }, [step?.id, speakStep]); // Removed voiceOutputEnabled from dependencies
+  }, [step?.id, speakStep]);
+
+  useEffect(() => {
+    if (showSavePrompt) {
+      speakStep("Do you want to save this recipe?");
+    }
+  }, [showSavePrompt, speakStep]);
 
   const toggleVoiceListening = async () => {
     if (!voiceEnabled) {
