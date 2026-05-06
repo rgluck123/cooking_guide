@@ -37,7 +37,7 @@ export const initialRecipes = {
         id: 3,
         title: "Cut the onion",
         instruction: "Peel 1 yellow onion and cut it into thin slices. Try to keep them roughly the same thickness for even cooking.",
-        image: "https://images.unsplash.com/photo-1608270861620-7d5e8c75c5e5?auto=format&fit=crop&w=400&q=80",
+        image: "/cooking_guide/images/authentic-lebanese-chicken-steps/cut-the-onion.png",
         hasTimer: false
       },
       {

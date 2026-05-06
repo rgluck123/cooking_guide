@@ -192,11 +192,15 @@ const LiveCooking = () => {
           setIsModifyModalOpen(false);
           return;
         }
-        if (/(ginger|chili|pepper|salt|cumin|coriander|cinnamon)/i.test(transcript) && !transcript.includes(' ')) {
-          setModifyInput(prev => ({ ...prev, name: transcript }));
-          if (voiceOutputEnabled) {
-            window.speechSynthesis.speak(new SpeechSynthesisUtterance(`Set ingredient to ${transcript}`));
-          }
+        
+        // Handle "add [ingredient]" or just "[ingredient]" inside the modal
+        const addItemMatch = transcript.match(/^(?:add|include) (.+)$/i);
+        const keywordMatch = transcript.match(/^(ginger|chili|pepper|salt|cumin|coriander|cinnamon)$/i);
+        const itemName = addItemMatch ? addItemMatch[1] : (keywordMatch ? keywordMatch[1] : null);
+
+        if (itemName) {
+          setModifyInput(prev => ({ ...prev, name: itemName }));
+          speakStep(`Added ${itemName}`);
           return;
         }
       }
@@ -208,23 +212,30 @@ const LiveCooking = () => {
         }
       }
 
-      if (/(scroll down|down|next screen|more)/i.test(transcript)) {
-        const scrollContainer = document.querySelector('[style*="overflowY: auto"]') || document.documentElement;
+      if (/(scroll down|down|go down|next screen|more)/i.test(transcript)) {
+        // If modal is open, scroll the modal. Otherwise scroll the main content pane.
+        const modalScroll = document.querySelector('[style*="maxHeight: 90vh"][style*="overflowY: auto"]');
+        const mainScroll = document.getElementById('scrollable-step-content');
+        const scrollContainer = modalScroll || mainScroll;
+        
         if (scrollContainer) {
           scrollContainer.scrollBy({ top: 350, behavior: 'smooth' });
         }
         return;
       }
       
-      if (/(scroll up|up|previous screen)/i.test(transcript)) {
-        const scrollContainer = document.querySelector('[style*="overflowY: auto"]') || document.documentElement;
+      if (/(scroll up|up|go up|previous screen)/i.test(transcript)) {
+        const modalScroll = document.querySelector('[style*="maxHeight: 90vh"][style*="overflowY: auto"]');
+        const mainScroll = document.getElementById('scrollable-step-content');
+        const scrollContainer = modalScroll || mainScroll;
+
         if (scrollContainer) {
           scrollContainer.scrollBy({ top: -350, behavior: 'smooth' });
         }
         return;
       }
 
-      if (/(next step|next|done|ok done|go ahead|next screen|go further|i am ready|all done)/i.test(transcript)) {
+      if (/(next step|next|done|ok done|go ahead|next screen|go further|i am ready|all done|finish)/i.test(transcript)) {
         if (currentStepIndexRef.current === visibleSteps.length - 1) {
           setShowSavePrompt(true);
         } else {
@@ -252,7 +263,7 @@ const LiveCooking = () => {
       else if (/(pause|stop|halt) (the )?timer|pause|pause (the )?time|stop (the )?time/i.test(transcript)) {
         timerRef.current?.pause();
       }
-      else if (/(reset|restart) (the )?(timer|time)/i.test(transcript)) {
+      else if (/(reset|restart|clear|start over) (the )?(timer|time|countdown)/i.test(transcript)) {
         timerRef.current?.reset();
       }
       else if (/(help|more info|more information|more instructions)/i.test(transcript)) {
@@ -271,18 +282,14 @@ const LiveCooking = () => {
         const itemName = transcript.replace(/^(add|include|remove) /, '').trim();
         
         if (isRemove) {
-          // Find the ingredient in the current step and "remove" it (hide it)
-          // This is a bit complex as it affects the activeRecipe state which is in context.
-          // For now, let's just speak a confirmation if it was a modification we added.
           const modToUndo = modificationsRef.current.find(m => m.name.toLowerCase() === itemName && m.stepId === step?.id);
           if (modToUndo) {
             handleUndoModification(modToUndo.id);
-            if (voiceOutputEnabled) {
-              const utterance = new SpeechSynthesisUtterance(`Removed ${itemName}`);
-              window.speechSynthesis.speak(utterance);
-            }
+            speakStep(`Removed ${itemName}`);
           }
         } else if (itemName) {
+          // If modal is open, this block won't be reached because of the earlier return,
+          // but for robustness we can check here too or just let the global handler add to list.
           setModifications(prev => [...prev, {
             id: Date.now(),
             name: itemName,
@@ -290,10 +297,7 @@ const LiveCooking = () => {
             notes: '',
             stepId: step?.id
           }]);
-          if (voiceOutputEnabled) {
-            const utterance = new SpeechSynthesisUtterance(`Added ${itemName}`);
-            window.speechSynthesis.speak(utterance);
-          }
+          speakStep(`Added ${itemName}`);
         }
       }
       else if (/(unmute|allow voice|allow speech)/i.test(transcript)) {

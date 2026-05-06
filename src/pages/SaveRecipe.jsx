@@ -11,16 +11,20 @@ const SaveRecipe = () => {
   const [notes, setNotes] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
   const [selectedModifications, setSelectedModifications] = useState(new Set());
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [pendingName, setPendingName] = useState('');
 
-  // Voice States
-  const [voiceEnabled, setVoiceEnabled] = useState(liveCookingDefaults.micEnabled);
-  const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(liveCookingDefaults.voiceOverEnabled);
+  // Voice States - Default to OFF when coming from the Save Prompt transition
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(typeof window !== 'undefined' && 'speechSynthesis' in window);
   const [recognitionSupported, setRecognitionSupported] = useState(true);
   const recognitionRef = useRef(null);
   const loopTimeoutRef = useRef(null);
 
   const recipeId = 'authentic-lebanese-chicken';
+
+  const scrollRef = useRef(null);
 
   // Get modifications from LiveCooking via navigation state
   const liveModifications = useMemo(() => location.state?.modifications || [], [location.state]);
@@ -132,6 +136,19 @@ const SaveRecipe = () => {
     navigate(-1); // Returns exactly to the previous LiveCooking step
   }, [navigate]);
 
+  const speakReview = useCallback((text) => {
+    if (!speechSupported || !voiceOutputEnabled) return;
+    try { window.speechSynthesis.cancel(); } catch(e) {}
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voices = window.speechSynthesis.getVoices();
+    const enVoice = voices.find(v => v.lang.startsWith('en')) || voices.find(v => v.lang.includes('en'));
+    if (enVoice) utterance.voice = enVoice;
+    utterance.lang = 'en-US';
+    utterance.rate = 0.95;
+    window.speechSynthesis.speak(utterance);
+  }, [speechSupported, voiceOutputEnabled]);
+
   // Voice Interaction Logic
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -158,26 +175,79 @@ const SaveRecipe = () => {
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript.toLowerCase().trim();
       
+      // RENAMING STATE MACHINE
+      if (isRenaming) {
+        if (pendingName) {
+          if (/(yes|correct|good|save|confirm|ok|perfect)/i.test(transcript)) {
+            setRecipeName(pendingName);
+            setPendingName('');
+            setIsRenaming(false);
+            speakReview(`Name updated to ${pendingName}`);
+            return;
+          }
+          if (/(no|retry|change|wrong|incorrect|it is not good|not good)/i.test(transcript)) {
+            setPendingName('');
+            speakReview("How would you like to name the recipe?");
+            return;
+          }
+        } else {
+          if (/(cancel|stop|exit|close|dismiss)/i.test(transcript)) {
+            setIsRenaming(false);
+            speakReview("Renaming cancelled");
+            return;
+          }
+          
+          const capitalized = transcript.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+          setPendingName(capitalized);
+          speakReview(`Is ${capitalized} correct?`);
+          return;
+        }
+      }
+
+      if (/(scroll down|down|go down|more)/i.test(transcript)) {
+        if (scrollRef.current) scrollRef.current.scrollBy({ top: 350, behavior: 'smooth' });
+        return;
+      }
+      if (/(scroll up|up|go up)/i.test(transcript)) {
+        if (scrollRef.current) scrollRef.current.scrollBy({ top: -350, behavior: 'smooth' });
+        return;
+      }
+
       if (/(home screen|home page|go to home)/i.test(transcript)) {
         navigate('/');
       }
-      else if (transcript.startsWith('remove ')) {
-        const query = transcript.replace('remove ', '').trim();
+      else if (/(previous|back|go back)/i.test(transcript)) {
+        handleExit();
+      }
+      else if (/(rename recipe|rename)/i.test(transcript)) {
+        setRecipeName('');
+        setPendingName('');
+        setIsRenaming(true);
+        speakReview("How would you like to name the recipe?");
+      }
+      else if (/(clear|cancel) (recipe )?name/i.test(transcript)) {
+        setRecipeName('');
+        speakReview("Recipe name cleared");
+      }
+      else if (transcript.startsWith('remove ') || transcript.startsWith('delete ')) {
+        const query = transcript.replace(/^(remove|delete) /, '').trim();
         const items = query.split(' and ').map(s => s.trim());
         items.forEach(itemName => {
           const modToRemove = allModifications.find(m => m.name.toLowerCase().includes(itemName));
           if (modToRemove && selectedModifications.has(modToRemove.id)) {
             toggleSelectModification(modToRemove.id);
+            speakReview(`Removed ${itemName}`);
           }
         });
       }
-      else if (transcript.startsWith('include ') || transcript.startsWith('restore ')) {
-        const query = transcript.replace(/(include|restore) /, '').trim();
+      else if (transcript.startsWith('include ') || transcript.startsWith('restore ') || transcript.startsWith('add ')) {
+        const query = transcript.replace(/^(include|restore|add) /, '').trim();
         const items = query.split(' and ').map(s => s.trim());
         items.forEach(itemName => {
           const modToInclude = allModifications.find(m => m.name.toLowerCase().includes(itemName));
           if (modToInclude && !selectedModifications.has(modToInclude.id)) {
             toggleSelectModification(modToInclude.id);
+            speakReview(`Included ${itemName}`);
           }
         });
       }
@@ -244,7 +314,7 @@ const SaveRecipe = () => {
         </div>
       </header>
 
-      <div style={{ flex: 1, padding: '20px', overflowY: 'auto', maxWidth: '600px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+      <div ref={scrollRef} style={{ flex: 1, padding: '20px', overflowY: 'auto', maxWidth: '600px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
         <div style={{ position: 'relative', marginBottom: '24px', borderRadius: '24px', overflow: 'hidden', height: '260px', boxShadow: 'var(--shadow)' }}>
           <img src={activeRecipe?.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=80"} alt={recipeName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           
