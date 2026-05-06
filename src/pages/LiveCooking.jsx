@@ -342,22 +342,17 @@ const LiveCooking = () => {
 
   const toggleVoiceListening = async () => {
     if (!voiceEnabled) {
+      // Request permission if enabling
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         stream.getTracks().forEach(track => track.stop());
-      } catch (err) { return; }
+      } catch (err) {
+        console.error("Microphone permission denied", err);
+        return;
+      }
     }
 
-    setVoiceEnabled(prev => {
-      const nextValue = !prev;
-      if (!nextValue) {
-        if (loopTimeoutRef.current) clearTimeout(loopTimeoutRef.current);
-        try { recognitionRef.current?.abort(); } catch(e) { /* ignore */ }
-      } else {
-        try { recognitionRef.current?.start?.(); } catch(e) { /* ignore */ }
-      }
-      return nextValue;
-    });
+    setVoiceEnabled(prev => !prev);
   };
 
   if (!activeRecipe || visibleSteps.length === 0) return null;
