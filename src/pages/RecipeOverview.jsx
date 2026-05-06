@@ -1,45 +1,50 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Book, ChevronLeft, Play, Info, Plus, ArrowLeft, ArrowRight } from 'lucide-react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { Book, ChevronLeft, Play, Info, Plus, Minus } from 'lucide-react';
 import InteractiveIngredient from '../components/InteractiveIngredient';
 import SubstituteModal from '../components/SubstituteModal';
 import DeboningModal from '../components/DeboningModal';
 import { useRecipes } from '../context/RecipeContext';
 
-const initialIngredients = [
-  { id: 1, name: 'Chicken Thighs', quantity: '400g', originalName: 'Chicken Thighs', edited: false, removed: false, originalPosition: 1 },
-  { id: 2, name: 'White Rice', quantity: '190g', originalName: 'White Rice', edited: false, removed: false, originalPosition: 2 },
-  { id: 3, name: 'Water', quantity: '380ml', originalName: 'Water', edited: false, removed: false, originalPosition: 3 },
-  { id: 4, name: 'Yellow Onion', quantity: '1', originalName: 'Yellow Onion', edited: false, removed: false, originalPosition: 4 },
-  { id: 5, name: 'Garlic', quantity: '3 cloves', originalName: 'Garlic', edited: false, removed: false, originalPosition: 5 },
-  { id: 6, name: 'Lebanese Spice Mix', quantity: '1 tbsp', originalName: 'Lebanese Spice Mix', edited: false, removed: false, originalPosition: 6 },
-  { id: 7, name: 'Lemon Juice', quantity: '2 tbsp', originalName: 'Lemon Juice', edited: false, removed: false, originalPosition: 7 },
-  { id: 8, name: 'Salt & Pepper', quantity: 'to taste', originalName: 'Salt & Pepper', edited: false, removed: false, originalPosition: 8 },
-];
-
-const cookingSteps = [
-  { id: 1, title: 'Cook the rice', instruction: 'Rinse 190g white rice and add to a pot with 380ml water. Bring to a boil, then reduce heat and simmer covered for 18-20 minutes until tender.' },
-  { id: 2, title: 'Debone the chicken', instruction: 'Let the cooked chicken cool for a few minutes. Carefully remove all bones and skin, shredding the meat into bite-sized pieces.' },
-  { id: 3, title: 'Cut the onion', instruction: 'Peel 1 yellow onion and cut it into thin slices. Try to keep them roughly the same thickness for even cooking.' },
-  { id: 4, title: 'Heat oil in the pan and put in the chopped onion', instruction: 'Heat oil in a large pan over medium heat and add the chopped onion. Sauté for 2-3 minutes until translucent and fragrant.' },
-  { id: 5, title: 'Add your seasoning', instruction: 'Add a pinch of salt, pepper, and a teaspoon each of cumin, coriander, and cinnamon. Stir well to combine.' },
-  { id: 6, title: 'Stir for 1 minute', instruction: 'Keep stirring the spices with the onions to toast them and release their aroma.' },
-  { id: 7, title: 'Push the onions to the side and place your chicken thighs in the pan', instruction: 'Carefully add the chicken thighs to the pan and mix well with the spiced onions.' },
-  { id: 8, title: 'Cook for about 8 minutes on each side until they look golden brown and juicy', instruction: 'Allow the chicken to cook through and develop a nice golden color on all sides.' },
-  { id: 9, title: 'Squeeze half a lemon over the chicken to brighten the flavors.', instruction: 'Drizzle fresh lemon juice over the cooked chicken for added zest and flavor.' },
-  { id: 10, title: 'Cut the other half of the lemon in slices', instruction: 'Slice the remaining lemon half into thin slices for serving.' },
-  { id: 11, title: 'Drain the water from the rice', instruction: 'Separate the rice grains and prepare for serving.' },
-  { id: 12, title: 'Serve half of the rice together with half of the chicken and the lemon slices', instruction: 'Plate the chicken and rice nicely with lemon slices on the side.' },
-  { id: 13, title: 'Put the other half in a container once it cools', instruction: 'Save the remaining portions for later.' }
-];
-
 const RecipeOverview = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { savedRecipes, saveRecipe, deleteRecipe, clearProgress } = useRecipes();
-  const [ingredients, setIngredients] = useState(initialIngredients);
-  const nextIngredientIdRef = useRef(initialIngredients.length + 1);
-  const nextIngredientPositionRef = useRef(initialIngredients.length + 1);
+  const { 
+    savedRecipes, saveRecipe, deleteRecipe, clearProgress, 
+    activeRecipe, setActiveRecipeById, updateActiveRecipeIngredients, 
+    addActiveRecipeIngredient, scaleActiveRecipePortions 
+  } = useRecipes();
+  
+  const recipeId = id || 'authentic-lebanese-chicken';
+  const location = useLocation();
+  const hasResetRef = useRef(false);
+  const portionPopupRef = useRef(null);
+
+  useEffect(() => {
+    // If we're coming from a "standard" entry (not from recipe book or recent), reset to default
+    const isStandardEntry = location.state?.from === 'results' || location.state?.from === 'home';
+    
+    if (isStandardEntry && !hasResetRef.current) {
+      hasResetRef.current = true;
+      setActiveRecipeById(recipeId, true); // Force reset
+    } else if (!activeRecipe || activeRecipe.id !== recipeId) {
+      setActiveRecipeById(recipeId);
+    }
+  }, [recipeId, activeRecipe, setActiveRecipeById, location.state]);
+
+  const ingredients = activeRecipe?.ingredients || [];
+  const cookingSteps = activeRecipe?.steps || [];
+
+  const nextIngredientIdRef = useRef(1);
+  const nextIngredientPositionRef = useRef(1);
+
+  useEffect(() => {
+    if (ingredients.length > 0) {
+      nextIngredientIdRef.current = Math.max(...ingredients.map(i => i.id), 0) + 1;
+      nextIngredientPositionRef.current = Math.max(...ingredients.map(i => i.originalPosition), 0) + 1;
+    }
+  }, [ingredients]);
+
   const ingredientTipsRef = useRef(null);
   
   const [isSubModalOpen, setIsSubModalOpen] = useState(false);
@@ -55,12 +60,36 @@ const RecipeOverview = () => {
 
   const [isDeboneModalOpen, setIsDeboneModalOpen] = useState(false);
   const [isAddIngredientModalOpen, setIsAddIngredientModalOpen] = useState(false);
-  const [addIngredientForm, setAddIngredientForm] = useState({ name: '', quantity: '', stepId: cookingSteps[0].id.toString() });
+  const [addIngredientForm, setAddIngredientForm] = useState({ name: '', quantity: '', stepId: '1' });
+  
+  const [isPortionPopupOpen, setIsPortionPopupOpen] = useState(false);
+
   const [showIngredientTips, setShowIngredientTips] = useState(false);
   const [showSavedNotice, setShowSavedNotice] = useState(false);
   const [savedNoticeText, setSavedNoticeText] = useState('Saved to my recipe book');
   const saveNoticeTimeoutRef = useRef(null);
-  const recipeBookId = 'lebanese-spicy-chicken';
+
+  useEffect(() => {
+    if (cookingSteps.length > 0 && addIngredientForm.stepId === '1' && cookingSteps[0].id !== 1) {
+      setAddIngredientForm(prev => ({ ...prev, stepId: cookingSteps[0].id.toString() }));
+    }
+  }, [cookingSteps, addIngredientForm.stepId]);
+
+  // Handle outside click for portion popup
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (isPortionPopupOpen && portionPopupRef.current && !portionPopupRef.current.contains(event.target)) {
+        setIsPortionPopupOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [isPortionPopupOpen]);
+
+  if (!activeRecipe) return null;
+
+  const currentPortions = parseInt(activeRecipe.portions) || 2;
+  const recipeBookId = 'authentic-lebanese-chicken';
   const savedRecipeInstance = savedRecipes.find((recipe) => recipe.id === recipeBookId);
   const isSavedToRecipeBook = !!savedRecipeInstance;
   const hasSavedModifications = isSavedToRecipeBook && savedRecipeInstance.modifications && savedRecipeInstance.modifications.length > 0;
@@ -82,33 +111,33 @@ const RecipeOverview = () => {
 
   const executeRemove = (item) => {
     const targetIds = getTargetIds(item);
-    setIngredients(prev => prev.map(i => targetIds.includes(i.id) ? { ...i, removed: true } : i));
+    const newIngredients = ingredients.map(i => targetIds.includes(i.id) ? { ...i, removed: true } : i);
+    updateActiveRecipeIngredients(newIngredients);
     setIsActionMenuOpen(false);
     clearSelectionIfMode();
   };
 
   const executeRestore = (item) => {
     const targetIds = getTargetIds(item);
-    setIngredients(prev => prev.map(i => targetIds.includes(i.id) ? { ...i, removed: false } : i));
+    const newIngredients = ingredients.map(i => targetIds.includes(i.id) ? { ...i, removed: false } : i);
+    updateActiveRecipeIngredients(newIngredients);
     setIsActionMenuOpen(false);
     clearSelectionIfMode();
   };
 
   const executeReset = (item) => {
     const targetIds = getTargetIds(item);
-    setIngredients(prev => {
-      let next = [...prev];
-      targetIds.forEach(id => {
-        const target = next.find(i => i.id === id);
-        if (target && target.replacedIds) {
-          next = next.filter(i => i.id !== id);
-          next = next.map(i => target.replacedIds.includes(i.id) ? { ...i, removed: false, hidden: false } : i);
-        } else if (target && target.edited) {
-          next = next.map(i => i.id === id ? { ...i, name: i.originalName, quantity: i.originalQuantity || i.quantity, edited: false } : i);
-        }
-      });
-      return next;
+    let next = [...ingredients];
+    targetIds.forEach(id => {
+      const target = next.find(i => i.id === id);
+      if (target && target.replacedIds) {
+        next = next.filter(i => i.id !== id);
+        next = next.map(i => target.replacedIds.includes(i.id) ? { ...i, removed: false, hidden: false } : i);
+      } else if (target && target.edited) {
+        next = next.map(i => i.id === id ? { ...i, name: i.originalName, quantity: i.originalQuantity || i.quantity, edited: false } : i);
+      }
     });
+    updateActiveRecipeIngredients(next);
     setIsActionMenuOpen(false);
     clearSelectionIfMode();
   };
@@ -145,36 +174,55 @@ const RecipeOverview = () => {
     setIsActionMenuOpen(true);
   };
 
-  const handleSubstitute = (ids, newName, newQty) => {
-    setIngredients(prev => {
-      let next = [...prev];
-      if (ids.length === 1) {
-        return next.map(item => {
-          if (item.id === ids[0]) {
-            return { ...item, name: newName, quantity: newQty, edited: true, originalQuantity: item.originalQuantity || item.quantity };
-          }
-          return item;
-        });
-      } else {
-        next = next.map(item => ids.includes(item.id) ? { ...item, hidden: true } : item);
-        const selectedItems = prev.filter(i => ids.includes(i.id));
-        const minPos = Math.min(...selectedItems.map(i => i.originalPosition));
-        const newId = nextIngredientIdRef.current;
-        nextIngredientIdRef.current += 1;
-        next.push({
-           id: newId,
-           name: newName,
-           quantity: newQty,
-           originalName: newName,
-           edited: false,
-           removed: false,
-           originalPosition: minPos,
-           replacedIds: ids
-        });
-        return next;
-      }
-    });
+  const handleSubstitute = (ids, newName, newQty, targetStepId = null) => {
+    let next = [...ingredients];
+    if (ids.length === 1) {
+      next = next.map(item => {
+        if (item.id === ids[0]) {
+          return { 
+            ...item, 
+            name: newName, 
+            quantity: newQty, 
+            edited: true, 
+            originalQuantity: item.originalQuantity || item.quantity,
+            assignedSteps: targetStepId ? [Number(targetStepId)] : item.assignedSteps
+          };
+        }
+        return item;
+      });
+    } else {
+      next = next.map(item => ids.includes(item.id) ? { ...item, hidden: true } : item);
+      const selectedItems = ingredients.filter(i => ids.includes(i.id));
+      const minPos = Math.min(...selectedItems.map(i => i.originalPosition));
+      const newId = nextIngredientIdRef.current;
+      nextIngredientIdRef.current += 1;
+
+      const steps = targetStepId ? [Number(targetStepId)] : selectedItems.reduce((acc, curr) => {
+        if (curr.assignedSteps) {
+          curr.assignedSteps.forEach(s => { if (!acc.includes(s)) acc.push(s); });
+        }
+        return acc;
+      }, []);
+
+      next.push({
+         id: newId,
+         name: newName,
+         quantity: newQty,
+         originalName: newName,
+         edited: false,
+         removed: false,
+         originalPosition: minPos,
+         replacedIds: ids,
+         assignedSteps: steps
+      });
+    }
+    updateActiveRecipeIngredients(next);
     clearSelectionIfMode();
+  };
+
+  const handlePortionChange = (val) => {
+    const newVal = Math.max(1, Math.min(20, currentPortions + val));
+    scaleActiveRecipePortions(newVal);
   };
 
   const handleAddIngredient = () => {
@@ -186,19 +234,16 @@ const RecipeOverview = () => {
     const newId = nextIngredientIdRef.current;
     nextIngredientIdRef.current += 1;
 
-    setIngredients(prev => [
-      ...prev,
-      {
-        id: newId,
-        name: trimmedName,
-        quantity: addIngredientForm.quantity.trim(),
-        originalName: trimmedName,
-        edited: false,
-        removed: false,
-        originalPosition: nextIngredientPositionRef.current,
-        assignedStep: Number(addIngredientForm.stepId)
-      }
-    ]);
+    addActiveRecipeIngredient({
+      id: newId,
+      name: trimmedName,
+      quantity: addIngredientForm.quantity.trim(),
+      originalName: trimmedName,
+      edited: false,
+      removed: false,
+      originalPosition: nextIngredientPositionRef.current,
+      assignedSteps: [Number(addIngredientForm.stepId)]
+    });
 
     nextIngredientPositionRef.current += 1;
 
@@ -217,7 +262,7 @@ const RecipeOverview = () => {
         image: 'https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?auto=format&fit=crop&w=800&q=80',
         time: '40 mins',
         difficulty: 'Intermediate',
-        portions: '2 portions'
+        portions: activeRecipe.portions
       });
       setSavedNoticeText('Saved to my recipe book');
     }
@@ -332,10 +377,53 @@ const RecipeOverview = () => {
           )}
         </div>
         
-        <div style={{ display: 'flex', gap: '16px', marginBottom: '32px' }}>
-          <div style={{ backgroundColor: 'var(--accent-green-light)', color: 'var(--accent-green)', padding: '6px 12px', borderRadius: '16px', fontWeight: '700', fontSize: '14px' }}>40 min</div>
+        <div style={{ display: 'flex', gap: '16px', marginBottom: '32px', position: 'relative' }}>
+          <div style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', padding: '6px 12px', borderRadius: '16px', fontWeight: '600', fontSize: '14px' }}>40 min</div>
           <div style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', padding: '6px 12px', borderRadius: '16px', fontWeight: '600', fontSize: '14px' }}>Intermediate</div>
-          <div style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', padding: '6px 12px', borderRadius: '16px', fontWeight: '600', fontSize: '14px' }}>2 Portions</div>
+          
+          <div style={{ position: 'relative' }}>
+            <div 
+              onClick={() => setIsPortionPopupOpen(!isPortionPopupOpen)}
+              style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', padding: '6px 12px', borderRadius: '16px', fontWeight: '600', fontSize: '14px', color: 'var(--text)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              {activeRecipe.portions}
+            </div>
+
+            {/* Inline Portion Scaling Popup - Repositioned */}
+            {isPortionPopupOpen && (
+              <div 
+                ref={portionPopupRef}
+                style={{
+                  position: 'absolute',
+                  top: '0',
+                  left: '105%',
+                  backgroundColor: 'var(--surface)',
+                  borderRadius: '12px',
+                  padding: '6px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  border: '1px solid var(--border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  zIndex: 60,
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                <button 
+                  onClick={() => handlePortionChange(-1)}
+                  style={{ width: '28px', height: '28px', borderRadius: '8px', border: 'none', backgroundColor: 'var(--accent-green-light)', color: 'var(--accent-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                >
+                  <Minus size={14} />
+                </button>
+                <button 
+                  onClick={() => handlePortionChange(1)}
+                  style={{ width: '28px', height: '28px', borderRadius: '8px', border: 'none', backgroundColor: 'var(--accent-green-light)', color: 'var(--accent-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                >
+                  <Plus size={14} />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Ingredients */}
@@ -443,31 +531,22 @@ const RecipeOverview = () => {
                     {step.id}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <p style={{ margin: '0', fontSize: '15px', fontWeight: '600', color: 'var(--text)', lineHeight: '1.4' }}>
-                      {step.title}
-                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <p style={{ margin: '0', fontSize: '15px', fontWeight: '600', color: 'var(--text)', lineHeight: '1.4' }}>
+                        {step.title}
+                      </p>
+                      {step.id === 2 && (
+                        <button 
+                          onClick={() => setIsDeboneModalOpen(true)}
+                          style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          <Info size={16} color="var(--accent-green)" />
+                        </button>
+                      )}
+                    </div>
                     <div style={{ borderBottom: '1px dotted var(--border)', marginTop: '8px' }} />
                   </div>
                 </div>
-                {step.id === 2 && (
-                  <button
-                    onClick={() => setIsDeboneModalOpen(true)}
-                    style={{
-                      padding: '6px 12px',
-                      backgroundColor: 'var(--accent-green-light)',
-                      border: 'none',
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      color: 'var(--accent-green)',
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap',
-                      marginLeft: '12px'
-                    }}
-                  >
-                    More info
-                  </button>
-                )}
               </div>
             ))}
           </div>
@@ -508,8 +587,8 @@ const RecipeOverview = () => {
       }}>
         <button 
           onClick={() => {
-            clearProgress(recipeBookId);
-            navigate('/live-cooking');
+            clearProgress(activeRecipe.id);
+            navigate('/live-cooking', { state: { recipeId: activeRecipe.id } });
           }}
           style={{
             width: '100%',
@@ -544,6 +623,7 @@ const RecipeOverview = () => {
         }} 
         ingredients={activeSubIngredients} 
         onSubstitute={handleSubstitute}
+        cookingSteps={cookingSteps}
       />
 
       <DeboningModal 

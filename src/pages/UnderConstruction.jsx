@@ -41,21 +41,28 @@ const UnderConstruction = () => {
         <ChevronLeft size={22} />
       </button>
 
-      <div style={{
-        width: '80px',
-        height: '80px',
-        borderRadius: '50%',
-        backgroundColor: 'var(--accent-green-light)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: '24px'
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        marginTop: '-15vh' 
       }}>
-        <Hammer size={40} color="var(--accent-green)" />
-      </div>
+        <div style={{
+          width: '80px',
+          height: '80px',
+          borderRadius: '50%',
+          backgroundColor: 'var(--accent-green-light)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: '24px'
+        }}>
+          <Hammer size={40} color="var(--accent-green)" />
+        </div>
 
-      <h1 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '8px' }}>Page under construction</h1>
-      <p style={{ fontSize: '15px', color: 'var(--text-light)' }}>Tap anywhere to go back</p>
+        <h1 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '8px' }}>Page under construction</h1>
+        <p style={{ fontSize: '15px', color: 'var(--text-light)' }}>Tap to go back</p>
+      </div>
     </div>
   );
 };

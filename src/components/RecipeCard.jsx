@@ -1,8 +1,8 @@
-import React from 'react';
-import { Clock, Book } from 'lucide-react';
+import { Book, Pencil } from 'lucide-react';
 
 const RecipeCard = ({ title, time, image, isBookLink = false, progress, isModified = false, onClick }) => {
   if (isBookLink) {
+    // ... rest of the Book SVG logic ...
     return (
       <div 
         onClick={onClick}
@@ -97,21 +97,26 @@ const RecipeCard = ({ title, time, image, isBookLink = false, progress, isModifi
         {isModified && (
           <div style={{
             position: 'absolute',
-            top: '8px',
+            bottom: '8px',
             right: '8px',
-            backgroundColor: 'var(--surface)',
-            color: 'var(--accent-orange)',
-            fontSize: '10px',
-            fontWeight: '800',
-            padding: '4px 8px',
-            borderRadius: '12px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-            border: '1px solid rgba(224, 122, 95, 0.3)',
+            backgroundColor: 'rgba(255, 255, 255, 0.55)',
+            color: 'var(--accent-green)',
+            fontSize: '9px',
+            fontWeight: '700',
+            padding: '3px 6px',
+            borderRadius: '8px',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
+            border: '1px solid rgba(0, 0, 0, 0.03)',
             zIndex: 2,
-            letterSpacing: '0.3px',
-            textTransform: 'uppercase'
+            letterSpacing: '0.4px',
+            textTransform: 'uppercase',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '3px',
+            opacity: 0.7
           }}>
-            Modified
+            <Pencil size={9} />
+            CUSTOMIZED
           </div>
         )}
       </div>

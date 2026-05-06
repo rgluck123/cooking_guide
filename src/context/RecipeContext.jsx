@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { initialRecipes } from '../data/recipes';
 
 const RecipeContext = createContext();
 
@@ -12,7 +13,7 @@ const getStoredJson = (key, fallback) => {
 };
 
 const defaultRecentRecipes = [
-  { id: 'lebanese-spicy-chicken', name: 'Authentic Lebanese Chicken with Rice', time: '40 mins', image: 'https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?auto=format&fit=crop&w=300&q=80' },
+  { id: 'authentic-lebanese-chicken', name: 'Authentic Lebanese Chicken with Rice', time: '40 mins', image: 'https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?auto=format&fit=crop&w=300&q=80' },
   { id: '2', name: 'White Bean Basil Chicken Chili', time: '70 mins', image: 'https://images.unsplash.com/photo-1552611052-33e04de081de?auto=format&fit=crop&w=300&q=80' },
   { id: '3', name: 'Veggie & Rice Stir-Fry', time: '65 mins', image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=300&q=80' },
   { id: '4', name: 'Beef Tacos', time: '30 mins', image: 'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?auto=format&fit=crop&w=300&q=80' },
@@ -32,6 +33,10 @@ export const RecipeProvider = ({ children }) => {
     micEnabled: true
   }));
 
+  const [activeRecipe, setActiveRecipe] = useState(null);
+
+  const [testingMode, setTestingMode] = useState(true);
+
   // Load recipes from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem('savedRecipes');
@@ -45,6 +50,14 @@ export const RecipeProvider = ({ children }) => {
     const progressStored = localStorage.getItem('recipeProgress');
     if (progressStored) {
       setRecipeProgress(JSON.parse(progressStored));
+    }
+    const activeStored = localStorage.getItem('activeRecipe');
+    if (activeStored) {
+      setActiveRecipe(JSON.parse(activeStored));
+    }
+    const testingStored = localStorage.getItem('testingMode');
+    if (testingStored !== null) {
+      setTestingMode(JSON.parse(testingStored));
     }
   }, []);
 
@@ -65,6 +78,68 @@ export const RecipeProvider = ({ children }) => {
     localStorage.setItem('liveCookingDefaults', JSON.stringify(liveCookingDefaults));
   }, [liveCookingDefaults]);
 
+  useEffect(() => {
+    if (activeRecipe) {
+      localStorage.setItem('activeRecipe', JSON.stringify(activeRecipe));
+    }
+  }, [activeRecipe]);
+
+  useEffect(() => {
+    localStorage.setItem('testingMode', JSON.stringify(testingMode));
+  }, [testingMode]);
+
+  const setActiveRecipeById = (recipeId, forceReset = false) => {
+    // If not forcing a reset and already have the right recipe, skip update
+    if (!forceReset && activeRecipe && activeRecipe.id === recipeId) {
+      return;
+    }
+
+    // 1. Try initial recipes
+    let recipe = initialRecipes[recipeId];
+    
+    // 2. Try saved recipes if not found
+    if (!recipe) {
+      recipe = savedRecipes.find(r => r.id.toString() === recipeId.toString());
+    }
+
+    if (recipe) {
+      setActiveRecipe(JSON.parse(JSON.stringify(recipe))); // Deep clone
+    }
+  };
+
+  const updateActiveRecipeIngredients = (newIngredients) => {
+    setActiveRecipe(prev => prev ? { ...prev, ingredients: newIngredients } : null);
+  };
+
+  const addActiveRecipeIngredient = (ingredient) => {
+    setActiveRecipe(prev => prev ? { 
+      ...prev, 
+      ingredients: [...prev.ingredients, ingredient] 
+    } : null);
+  };
+
+  const updateActiveRecipe = (updates) => {
+    setActiveRecipe(prev => prev ? { ...prev, ...updates } : null);
+  };
+
+  const scaleActiveRecipePortions = (newPortions) => {
+    setActiveRecipe(prev => {
+      if (!prev) return null;
+      const scaledIngredients = prev.ingredients.map(ing => {
+        if (ing.baseQuantity === 0 || isNaN(Number(ing.baseQuantity))) return ing;
+        const newQty = (ing.baseQuantity * newPortions);
+        // Format nicely: remove .0, keep 1 decimal if needed
+        const formattedQty = parseFloat(Number(newQty).toFixed(1)).toString();
+        return { ...ing, quantity: `${formattedQty}${ing.unit ? (ing.unit.length > 1 ? ' ' + ing.unit : ing.unit) : ''}` };
+      });
+      return { 
+        ...prev, 
+        portions: `${newPortions} Portions`,
+        ingredients: scaledIngredients 
+      };
+    });
+  };
+
   const saveRecipe = (recipe) => {
     const newRecipe = {
       id: Date.now(),
@@ -79,6 +154,14 @@ export const RecipeProvider = ({ children }) => {
     setRecentRecipes(prev => {
       const filtered = prev.filter(r => r.id !== recipe.id);
       return [recipe, ...filtered].slice(0, 10); // Keep last 10 recents
+    });
+  };
+
+  const deleteRecent = (recipeId) => {
+    setRecentRecipes(prev => {
+      const updated = prev.filter(r => r.id !== recipeId);
+      localStorage.setItem('recentRecipes', JSON.stringify(updated));
+      return updated;
     });
   };
 
@@ -119,8 +202,17 @@ export const RecipeProvider = ({ children }) => {
       recentRecipes,
       recipeProgress,
       liveCookingDefaults,
+      activeRecipe,
+      testingMode,
+      setTestingMode,
+      setActiveRecipeById,
+      updateActiveRecipeIngredients,
+      addActiveRecipeIngredient,
+      updateActiveRecipe,
+      scaleActiveRecipePortions,
       saveRecipe, 
       addRecent,
+      deleteRecent,
       updateProgress,
       clearProgress,
       updateLiveCookingDefaults,

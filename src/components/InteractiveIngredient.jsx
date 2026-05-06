@@ -2,150 +2,108 @@ import React, { useState, useRef } from 'react';
 import { Square, CheckSquare } from 'lucide-react';
 
 const InteractiveIngredient = ({ item, onSwipeLeft, onSwipeRight, onLongPress, isSelectMode, isSelected, onToggleSelect, groupOffsetX, onGroupDrag, onGroupDragEnd }) => {
-  const [localOffsetX, setLocalOffsetX] = useState(0);
-  const startXRef = useRef(0);
-  const currentXRef = useRef(0);
-  const longPressTimer = useRef(null);
+  const [dragX, setDragX] = useState(0);
   const isDragging = useRef(false);
+  const startX = useRef(0);
+  const isLongPressActive = useRef(false);
+  const longPressTimer = useRef(null);
 
-  const offsetX = groupOffsetX !== undefined ? groupOffsetX : localOffsetX;
-
-  const updateOffset = (val) => {
-    if (groupOffsetX !== undefined && onGroupDrag) {
-      onGroupDrag(val);
-    } else {
-      setLocalOffsetX(val);
-    }
-  };
+  const isSubbed = item.edited || item.replacedIds;
 
   const handleTouchStart = (e) => {
-    startXRef.current = e.touches[0].clientX;
-    currentXRef.current = startXRef.current;
+    if (isSelectMode && !isSelected) return;
     isDragging.current = true;
+    startX.current = e.touches[0].clientX - dragX;
     
     longPressTimer.current = setTimeout(() => {
-      if (Math.abs(currentXRef.current - startXRef.current) < 10) {
-        onLongPress(item);
-        isDragging.current = false;
-        updateOffset(0);
-      }
+      isLongPressActive.current = true;
+      onLongPress(item);
     }, 500);
   };
 
   const handleTouchMove = (e) => {
     if (!isDragging.current) return;
-    currentXRef.current = e.touches[0].clientX;
-    const deltaX = currentXRef.current - startXRef.current;
+    const currentX = e.touches[0].clientX;
+    const diff = currentX - startX.current;
     
-    if (Math.abs(deltaX) > 10 && longPressTimer.current) {
+    if (Math.abs(diff) > 10) {
       clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
     }
-
-    if (Math.abs(deltaX) < 20) {
-      updateOffset(0);
-      return;
-    }
-
-    const adjustedDelta = (deltaX > 0 ? deltaX - 20 : deltaX + 20) * 0.4;
-
-    if (adjustedDelta > 100) updateOffset(100);
-    else if (adjustedDelta < -100) updateOffset(-100);
-    else updateOffset(adjustedDelta);
+    
+    setDragX(diff);
+    if (onGroupDrag && isSelected) onGroupDrag(diff);
   };
 
   const handleTouchEnd = () => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-    
-    if (!isDragging.current) return;
     isDragging.current = false;
+    clearTimeout(longPressTimer.current);
     
-    if (offsetX < -50) {
-      onSwipeLeft(item);
-    } else if (offsetX > 50) {
+    if (isLongPressActive.current) {
+      isLongPressActive.current = false;
+      setDragX(0);
+      if (onGroupDragEnd) onGroupDragEnd();
+      return;
+    }
+
+    if (dragX > 60) {
       onSwipeRight(item);
+    } else if (dragX < -60) {
+      onSwipeLeft(item);
     }
     
-    if (groupOffsetX !== undefined && onGroupDragEnd) {
-      onGroupDragEnd();
-    } else {
-      setLocalOffsetX(0);
-    }
+    setDragX(0);
+    if (onGroupDragEnd) onGroupDragEnd();
   };
 
   const handleMouseDown = (e) => {
-    startXRef.current = e.clientX;
-    currentXRef.current = startXRef.current;
+    if (isSelectMode && !isSelected) return;
     isDragging.current = true;
+    startX.current = e.clientX - dragX;
     
     longPressTimer.current = setTimeout(() => {
-      if (Math.abs(currentXRef.current - startXRef.current) < 10) {
-        onLongPress(item);
-        isDragging.current = false;
-        updateOffset(0);
-      }
+      isLongPressActive.current = true;
+      onLongPress(item);
     }, 500);
   };
 
   const handleMouseMove = (e) => {
     if (!isDragging.current) return;
-    currentXRef.current = e.clientX;
-    const deltaX = currentXRef.current - startXRef.current;
-    
-    if (Math.abs(deltaX) > 10 && longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-
-    if (Math.abs(deltaX) < 20) {
-      updateOffset(0);
-      return;
-    }
-
-    const adjustedDelta = (deltaX > 0 ? deltaX - 20 : deltaX + 20) * 0.4;
-    
-    if (adjustedDelta > 100) updateOffset(100);
-    else if (adjustedDelta < -100) updateOffset(-100);
-    else updateOffset(adjustedDelta);
+    const diff = e.clientX - startX.current;
+    if (Math.abs(diff) > 10) clearTimeout(longPressTimer.current);
+    setDragX(diff);
+    if (onGroupDrag && isSelected) onGroupDrag(diff);
   };
 
   const handleMouseUp = () => {
-    if (longPressTimer.current) clearTimeout(longPressTimer.current);
-    if (!isDragging.current) return;
     isDragging.current = false;
-    
-    if (offsetX < -50) {
-      onSwipeLeft(item);
-    } else if (offsetX > 50) {
-      onSwipeRight(item);
+    clearTimeout(longPressTimer.current);
+    if (isLongPressActive.current) {
+      isLongPressActive.current = false;
+      setDragX(0);
+      if (onGroupDragEnd) onGroupDragEnd();
+      return;
     }
-
-    if (groupOffsetX !== undefined && onGroupDragEnd) {
-      onGroupDragEnd();
-    } else {
-      setLocalOffsetX(0);
-    }
+    if (dragX > 60) onSwipeRight(item);
+    else if (dragX < -60) onSwipeLeft(item);
+    setDragX(0);
+    if (onGroupDragEnd) onGroupDragEnd();
   };
 
   const handleMouseLeave = () => {
-    if (isDragging.current) {
-      handleMouseUp();
-    }
+    if (isDragging.current) handleMouseUp();
   };
 
-  const isSubbed = item.edited || item.replacedIds;
+  const offsetX = groupOffsetX !== undefined ? groupOffsetX : dragX;
+  
   let bgIndicator = 'transparent';
   let indicatorText = '';
-
+  
   if (offsetX < -20) {
     if (item.removed) {
       bgIndicator = 'var(--accent-green-light)';
       indicatorText = 'Restore';
     } else {
-      bgIndicator = '#fff7ed';
+      bgIndicator = '#fee2e2';
       indicatorText = 'Remove';
     }
   } else if (offsetX > 20) {
@@ -183,52 +141,55 @@ const InteractiveIngredient = ({ item, onSwipeLeft, onSwipeRight, onLongPress, i
           borderRadius: '12px',
           border: isSelected ? '1px solid var(--accent-green)' : '1px solid var(--border)',
           transform: `translateX(${offsetX}px)`,
-          transition: isDragging.current ? 'none' : 'transform 0.3s ease, background-color 0.2s',
-          boxShadow: 'var(--shadow)',
+          transition: (isDragging.current || (groupOffsetX !== undefined && groupOffsetX !== 0)) ? 'none' : 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.2s',
+          boxShadow: (isDragging.current || (groupOffsetX !== undefined && groupOffsetX !== 0)) ? '0 4px 12px rgba(0,0,0,0.1)' : 'var(--shadow)',
           cursor: 'grab',
           position: 'relative',
           zIndex: 1,
-          userSelect: 'none'
+          userSelect: 'none',
+          touchAction: 'none',
+          minHeight: '64px',
+          boxSizing: 'border-box'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
           {isSelectMode ? (
             <div 
               onClick={(e) => { e.stopPropagation(); onToggleSelect(item.id); }} 
-              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', color: isSelected ? 'var(--accent-green)' : '#A0A0A0', transition: 'color 0.4s ease', width: '24px', height: '24px' }}
+              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', color: isSelected ? '#2D4529' : '#555555', width: '24px', height: '24px', flexShrink: 0 }}
             >
               {isSelected ? <CheckSquare size={24} /> : <Square size={24} />}
             </div>
           ) : (
-            <div style={{ width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: item.removed ? 'var(--text-light)' : 'var(--accent-green)' }} />
+            <div style={{ width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ 
+                width: '10px', 
+                height: '10px', 
+                borderRadius: '50%', 
+                backgroundColor: 'transparent',
+                border: '1px solid var(--text)' 
+              }} />
             </div>
           )}
           
-          <div>
+          <div style={{ flex: 1 }}>
             <div style={{ 
               fontSize: '16px', 
               fontWeight: '600', 
-              color: item.removed ? 'var(--text-light)' : 'var(--text)',
+              color: 'var(--text)',
               textDecoration: item.removed ? 'line-through' : 'none'
             }}>
               {item.name}
-              {item.edited && <span style={{ fontSize: '12px', color: 'var(--accent-orange)', marginLeft: '8px', fontStyle: 'italic' }}>(edited)</span>}
-              {item.replacedIds && <span style={{ fontSize: '12px', color: 'var(--accent-orange)', marginLeft: '8px', fontStyle: 'italic' }}>(group sub)</span>}
             </div>
-            {item.assignedStep && (
-              <div style={{ fontSize: '12px', color: 'var(--accent-green)', marginTop: '2px', fontWeight: '600' }}>
-                Added to step {item.assignedStep}
-              </div>
-            )}
-            {item.originalName !== item.name && !item.replacedIds && (
-              <div style={{ fontSize: '12px', color: 'var(--text-light)', marginTop: '2px' }}>
-                Substituted for: {item.originalName}
+            {(item.edited || item.replacedIds) && (
+              <div style={{ fontSize: '11px', color: 'var(--accent-green)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '1px' }}>
+                {item.replacedIds ? 'Substituted Group' : 'Substituted'}
               </div>
             )}
           </div>
         </div>
-        <div style={{ fontWeight: '700', color: item.removed ? 'var(--text-light)' : 'var(--accent-green)', textDecoration: item.removed ? 'line-through' : 'none' }}>
+
+        <div style={{ fontSize: '15px', fontWeight: '700', color: item.removed ? 'var(--text-light)' : 'var(--accent-green)', textDecoration: item.removed ? 'line-through' : 'none', marginLeft: '12px', flexShrink: 0 }}>
           {item.quantity}
         </div>
       </div>

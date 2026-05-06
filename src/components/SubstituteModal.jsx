@@ -1,14 +1,22 @@
 import React, { useState } from 'react';
 import { X, Check } from 'lucide-react';
 
-const SubstituteModal = ({ isOpen, onClose, ingredients, onSubstitute }) => {
-  if (!isOpen || !ingredients || ingredients.length === 0) return null;
-
+const SubstituteModal = ({ isOpen, onClose, ingredients, onSubstitute, cookingSteps = [] }) => {
   const [customName, setCustomName] = useState('');
   const [customQty, setCustomQty] = useState('');
+  const [selectedStepId, setSelectedStepId] = useState('');
 
-  // Mock recommendations database
+  if (!isOpen || !ingredients || ingredients.length === 0) return null;
+
+  // Recommendations database expanded with Lo-Fi Design options for Yellow Onion
   const recommendations = {
+    'Yellow Onion': [
+      { name: 'Red onion', quantity: '1' },
+      { name: 'Shallots', quantity: '3' },
+      { name: 'Spring onions', quantity: '5-6 stalks' },
+      { name: 'Onion powder', quantity: '1 tbsp' },
+      { name: 'Garlic', quantity: '4 cloves' }
+    ],
     'Chicken Thighs': [
       { name: 'Tofu', quantity: '400g' },
       { name: 'Chickpeas', quantity: '2 cans' }
@@ -25,20 +33,28 @@ const SubstituteModal = ({ isOpen, onClose, ingredients, onSubstitute }) => {
   
   const recs = isGroup ? [] : (recommendations[originalName] || []);
 
+  // Determine if ingredients are from different steps
+  const uniqueSteps = Array.from(new Set(ingredients.flatMap(ing => ing.assignedSteps || [])));
+  const isMultiStep = isGroup && uniqueSteps.length > 1;
+
   const handleSelect = (name, quantity) => {
-    onSubstitute(ingredients.map(i => i.id), name, quantity);
-    setCustomName('');
-    setCustomQty('');
+    onSubstitute(ingredients.map(i => i.id), name, quantity, selectedStepId || null);
+    resetForm();
     onClose();
   };
 
   const handleCustomSubmit = () => {
     if (customName && customQty) {
-      onSubstitute(ingredients.map(i => i.id), customName, customQty);
-      setCustomName('');
-      setCustomQty('');
+      onSubstitute(ingredients.map(i => i.id), customName, customQty, selectedStepId || null);
+      resetForm();
       onClose();
     }
+  };
+
+  const resetForm = () => {
+    setCustomName('');
+    setCustomQty('');
+    setSelectedStepId('');
   };
 
   return (
@@ -64,14 +80,32 @@ const SubstituteModal = ({ isOpen, onClose, ingredients, onSubstitute }) => {
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
           <h2 style={{ fontSize: '20px', margin: 0 }}>Substitute {displayTitle}</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+          <button onClick={() => { resetForm(); onClose(); }} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
             <X size={24} color="var(--text)" />
           </button>
         </div>
 
+        {/* Step Selection - Only if multi-step substitution */}
+        {isMultiStep && (
+          <div style={{ marginBottom: '24px', padding: '16px', backgroundColor: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--border)' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Assign to Cooking Step</h3>
+            <p style={{ fontSize: '13px', color: 'var(--text-light)', marginBottom: '12px', lineHeight: '1.4' }}>These ingredients are currently used in different steps. Select one step for the new substitute:</p>
+            <select 
+              value={selectedStepId}
+              onChange={(e) => setSelectedStepId(e.target.value)}
+              style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid var(--border)', backgroundColor: 'var(--bg)', fontFamily: 'var(--sans)', fontSize: '14px', outline: 'none' }}
+            >
+              <option value="">Keep current steps (split)</option>
+              {cookingSteps.map(step => (
+                <option key={step.id} value={step.id}>Step {step.id}: {step.title}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Removed "Recommended" header as it is obvious */}
         {recs.length > 0 && (
           <div style={{ marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '16px', color: 'var(--text-light)', marginBottom: '12px' }}>Recommendations</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {recs.map((rec, i) => (
                 <div 

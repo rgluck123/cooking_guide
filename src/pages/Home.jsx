@@ -1,13 +1,27 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, SlidersHorizontal, User, Clock, ChevronRight } from 'lucide-react';
+import { Search, SlidersHorizontal, User, X } from 'lucide-react';
 import HorizontalScroll from '../components/HorizontalScroll';
 import RecipeCard from '../components/RecipeCard';
 import { useRecipes } from '../context/RecipeContext';
 
 const Home = () => {
   const navigate = useNavigate();
-  const { savedRecipes, recentRecipes, recipeProgress } = useRecipes();
+  const { savedRecipes, recentRecipes, recipeProgress, deleteRecent } = useRecipes();
+  const [deletingId, setDeletingId] = useState(null);
+  const longPressTimerRef = useRef(null);
+
+  const startLongPress = (id) => {
+    longPressTimerRef.current = setTimeout(() => {
+      setDeletingId(id);
+    }, 600);
+  };
+
+  const endLongPress = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+    }
+  };
 
   const cuisines = [
     { name: 'Italian', image: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=200&q=80' },
@@ -21,7 +35,7 @@ const Home = () => {
     const hasRecents = recentRecipes.length > 0;
     
     const displayRecipes = hasRecents ? recentRecipes : [
-      { id: 'lebanese-spicy-chicken', name: 'Authentic Lebanese Chicken with Rice', time: '40', image: 'https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?auto=format&fit=crop&w=300&q=80' },
+      { id: 'authentic-lebanese-chicken', name: 'Authentic Lebanese Chicken with Rice', time: '40', image: 'https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?auto=format&fit=crop&w=300&q=80' },
       { id: '2', name: 'White Bean Basil Chicken Chili', time: '70', image: 'https://images.unsplash.com/photo-1552611052-33e04de081de?auto=format&fit=crop&w=300&q=80' },
       { id: '3', name: 'Veggie & Rice Stir-Fry', time: '65', image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=300&q=80' },
       { id: '4', name: 'Beef Tacos', time: '30', image: 'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?auto=format&fit=crop&w=300&q=80' }
@@ -37,26 +51,69 @@ const Home = () => {
             const progress = recipeProgress[recipe.id];
             const hasProgress = progress && progress.currentStep > 0;
             const percent = hasProgress ? Math.round((progress.currentStep / (progress.totalSteps - 1)) * 100) : null;
+            const isDeleting = deletingId === recipe.id;
             
             return (
-              <RecipeCard 
-                key={recipe.id}
-                title={recipe.name} 
-                time={recipe.time?.toString().replace(' mins', '') || ''} 
-                image={recipe.image} 
-                progress={percent}
-                onClick={() => {
-                  if (recipe.id === 'lebanese-spicy-chicken') {
-                    if (hasProgress) {
-                      navigate('/live-cooking');
-                    } else {
-                      navigate(`/recipe/${recipe.id}`);
+              <div 
+                key={recipe.id} 
+                style={{ position: 'relative' }}
+                onMouseDown={() => startLongPress(recipe.id)}
+                onMouseUp={endLongPress}
+                onMouseLeave={endLongPress}
+                onTouchStart={() => startLongPress(recipe.id)}
+                onTouchEnd={endLongPress}
+              >
+                <RecipeCard 
+                  title={recipe.name} 
+                  time={recipe.time?.toString().replace(' mins', '') || ''} 
+                  image={recipe.image} 
+                  progress={percent}
+                  onClick={() => {
+                    if (isDeleting) {
+                      setDeletingId(null);
+                      return;
                     }
-                  } else {
-                    navigate('/under-construction');
-                  }
-                }} 
-              />
+                    if (recipe.id === 'authentic-lebanese-chicken') {
+                      if (hasProgress) {
+                        navigate('/live-cooking');
+                      } else {
+                        navigate(`/recipe/${recipe.id}`, { state: { from: 'recent' } });
+                      }
+                    } else {
+                      navigate('/under-construction');
+                    }
+                  }} 
+                />
+                
+                {isDeleting && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteRecent(recipe.id);
+                      setDeletingId(null);
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: '10px',
+                      right: '10px',
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '50%',
+                      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                      color: 'white',
+                      border: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      zIndex: 10,
+                      backdropFilter: 'blur(4px)'
+                    }}
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+              </div>
             );
           })}
         </HorizontalScroll>

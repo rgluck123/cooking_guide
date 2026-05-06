@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Minus, Plus, Search, SlidersHorizontal } from 'lucide-react';
+import { ChevronLeft, Minus, Plus, Search, SlidersHorizontal, Users } from 'lucide-react';
+import { useRecipes } from '../context/RecipeContext';
 
 const Filter = () => {
   const navigate = useNavigate();
+  const { scaleActiveRecipePortions } = useRecipes();
   
   const [difficulty, setDifficulty] = useState([]);
   const [protein, setProtein] = useState([]);
-  const [portions, setPortions] = useState(1);
+  const [portions, setPortions] = useState(2);
   const [time, setTime] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
 

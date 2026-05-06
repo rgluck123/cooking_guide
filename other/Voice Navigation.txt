@@ -1,0 +1,18 @@
+I want to implement the following voice navigation. When a word is in parenthesis (word) it is optional, so it may be in the command or no. When there is a slash /. There can be either or word1/word2 in the command.
+Action: Next Step | Commands: Next Step, Next, Done, Ok done, Next Step Please, Go Ahead, Next Screen, Go Further, I am ready, All done;
+Action: Previous Step | Commands: Previous Step, Previous, Back, Go Back, Please Go Back, Go Back Please, Last Step, Last Screen;
+Action: Home Screen | Commands: Go to (the) Home Screen (please), Home Screen, Home Page, Go to (the) Home Page (please), (Please) go to (the) Home Page, (Please) go to (the) Home Screen;
+Action: Start the Timer | Commands: (ok) Start/Launch/Set (the) Timer, Start the Countdown;
+Action: Pause the Timer | Commands: Pause/Stop/Halt (the) Timer, Pause, Pause the Time, Stop the Time;
+Action: Reset the Timer | Commands: Reset (the) Timer/Time;
+Action: Open Modify | Commands: Modify, Do/Put Modification;
+Action: Close Temporary View | Commands: Close, Go to (the) Recipe/Step;
+Action: More instructions | Commands: Help, More info, More information, More instructions;
+Action: Turn on Speech Output | Commands: Unmute, Allow Voice/Speech;
+Action: Turn off Speech Output | Commands: Mute, Turn off Voice/Speech, Disable Voice/Speech;
+Action: Show Recipe Overview | Commands: (Show) Recipe Overview, Show (All) Recipe Steps;
+Action: Say Again | Commands: Again (Please), (Please) (Say) Again, (Please) Speak Again;
+Action: Confirm | Commands: Yes;
+Action: Remove ingredient | Commands: Remove INGREDIENT_NAME;
+Action: Save Recipe | Commands: Save Recipe;
+The INGREDIENT_NAME depends which ingredients are in modifications list in recipe saving. Ensure that the voice navigation works.

@@ -10,12 +10,13 @@ const Results = () => {
   const { savedRecipes } = useRecipes();
   
   const locationState = location.state || {};
-  const [searchTerm, setSearchTerm] = useState(locationState.query ?? '');
+  const initialQuery = locationState.query || '';
+  const [searchTerm, setSearchTerm] = useState(initialQuery);
 
   const baseResults = [
     { id: '1', title: 'White Bean Basil Chicken Chili', time: '70', protein: 'Chicken', difficulty: 'Intermediate', cuisine: 'Mexican', image: 'https://images.unsplash.com/photo-1552611052-33e04de081de?auto=format&fit=crop&w=400&q=80' },
     { id: '2', title: 'Veggie & Rice Stir-Fry', time: '65', protein: 'Vegetarian', difficulty: 'Beginner', cuisine: 'Japanese', image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=400&q=80' },
-    { id: 'lebanese-spicy-chicken', title: 'Lebanese Spicy Chicken', time: '45', protein: 'Chicken', difficulty: 'Intermediate', cuisine: 'Lebanese', image: 'https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?auto=format&fit=crop&w=400&q=80' },
+    { id: 'authentic-lebanese-chicken', title: 'Authentic Lebanese Chicken with Rice', time: '40', protein: 'Chicken', difficulty: 'Intermediate', cuisine: 'Lebanese', image: 'https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?auto=format&fit=crop&w=400&q=80' },
     { id: '3', title: 'Turkey Tacos', time: '45', protein: 'Chicken', difficulty: 'Beginner', cuisine: 'Mexican', image: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=400&q=80' },
     { id: '4', title: 'Lebanese Fattoush Salad', time: '20', protein: 'Vegetarian', difficulty: 'Beginner', cuisine: 'Lebanese', image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=400&q=80' }
   ];
@@ -91,8 +92,7 @@ const Results = () => {
     <div style={{ 
       minHeight: '100vh', 
       backgroundColor: 'var(--bg)', 
-      paddingBottom: 'calc(90px + env(safe-area-inset-bottom))',
-      animation: 'slideInRight 0.3s ease-out'
+      paddingBottom: 'calc(90px + env(safe-area-inset-bottom))'
     }}>
       {/* Header */}
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'calc(24px + env(safe-area-inset-top)) 20px', position: 'sticky', top: 0, backgroundColor: 'var(--bg)', zIndex: 10 }}>
@@ -100,7 +100,7 @@ const Results = () => {
           <ChevronLeft size={28} color="var(--text)" />
         </button>
         <h1 style={{ fontSize: '20px', fontWeight: '700', textAlign: 'center', flex: 1, padding: '0 8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {searchTerm.trim() ? `Results for "${searchTerm.trim()}"` : locationState.cuisine ? `${locationState.cuisine} Recipes` : 'Results'}
+          {initialQuery.trim() ? `Results for "${initialQuery.trim()}"` : locationState.cuisine ? `${locationState.cuisine} Recipes` : 'Results'}
         </h1>
         <button onClick={() => navigate('/filter')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '-8px' }}>
           <SlidersHorizontal size={24} color="var(--text)" />
@@ -122,7 +122,7 @@ const Results = () => {
           <Search size={20} color="var(--text-light)" />
           <input
             type="text"
-            placeholder="Search recipes..."
+            placeholder="Filter by name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
@@ -154,8 +154,8 @@ const Results = () => {
             image={r.image} 
             isModified={r.isModified}
             onClick={() => {
-              if (r.id === 'lebanese-spicy-chicken') {
-                navigate(`/recipe/${r.id}`);
+              if (r.id === 'authentic-lebanese-chicken' || r.isSavedVersion) {
+                navigate(`/recipe/${r.id}`, { state: { from: r.isSavedVersion ? 'saved' : 'results' } });
               } else {
                 navigate('/under-construction');
               }
@@ -168,19 +168,6 @@ const Results = () => {
           </div>
         )}
       </div>
-
-      <style>{`
-        @keyframes slideInRight {
-          from {
-            opacity: 0;
-            transform: translateX(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-      `}</style>
     </div>
   );
 };

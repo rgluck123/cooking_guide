@@ -1,3 +1,4 @@
+/* global workbox, importScripts */
 // Service Worker with Workbox injection point
 // Workbox will inject the precache manifest here
 importScripts('https://storage.googleapis.com/workbox-cdn/releases/7.4.1/workbox-sw.js');
