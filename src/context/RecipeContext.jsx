@@ -15,14 +15,15 @@ const defaultRecentRecipes = [
   { id: 'lebanese-spicy-chicken', name: 'Authentic Lebanese Chicken with Rice', time: '40 mins', image: 'https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?auto=format&fit=crop&w=300&q=80' },
   { id: '2', name: 'White Bean Basil Chicken Chili', time: '70 mins', image: 'https://images.unsplash.com/photo-1552611052-33e04de081de?auto=format&fit=crop&w=300&q=80' },
   { id: '3', name: 'Veggie & Rice Stir-Fry', time: '65 mins', image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=300&q=80' },
-  { id: '4', name: 'Beef Tacos', time: '30 mins', image: 'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?auto=format&fit=crop&w=300&q=80' }
+  { id: '4', name: 'Beef Tacos', time: '30 mins', image: 'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?auto=format&fit=crop&w=300&q=80' },
+  { id: '5', name: 'Mushroom Risotto', time: '45 mins', image: 'https://images.unsplash.com/photo-1476124369491-e7addf5db371?auto=format&fit=crop&w=300&q=80' }
 ];
 
 export const RecipeProvider = ({ children }) => {
   const [savedRecipes, setSavedRecipes] = useState(() => getStoredJson('savedRecipes', []));
   const [recentRecipes, setRecentRecipes] = useState(() => {
     const stored = getStoredJson('recentRecipes', null);
-    if (!stored || stored.length < 4) return defaultRecentRecipes;
+    if (!stored || stored.length < 5) return defaultRecentRecipes;
     return stored;
   });
   const [recipeProgress, setRecipeProgress] = useState(() => getStoredJson('recipeProgress', {}));

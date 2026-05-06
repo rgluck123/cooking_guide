@@ -28,7 +28,7 @@ const RecipeBook = () => {
         backgroundColor: 'var(--bg)',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'flex-start',
+        justifyContent: 'center',
         position: 'sticky',
         top: 0,
         zIndex: 20
@@ -37,23 +37,22 @@ const RecipeBook = () => {
           onClick={() => navigate('/')}
           aria-label="Back to home"
           style={{
+            position: 'absolute',
+            left: '12px',
             background: 'none',
             border: 'none',
             cursor: 'pointer',
             padding: '8px',
-            marginLeft: '-8px',
-            marginRight: '8px',
             color: 'var(--text)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
+            justifyContent: 'center'
           }}
         >
           <ChevronLeft size={28} />
         </button>
         <h1 style={{
-          fontSize: '24px',
+          fontSize: '20px',
           fontWeight: '700',
           color: 'var(--text)',
           margin: 0,

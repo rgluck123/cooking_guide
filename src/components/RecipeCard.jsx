@@ -148,7 +148,6 @@ const RecipeCard = ({ title, time, image, isBookLink = false, progress, isModifi
           fontWeight: '700',
           marginTop: '6px'
         }}>
-          <Clock size={14} />
           {time} min
         </div>
       </div>

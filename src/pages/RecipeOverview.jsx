@@ -40,6 +40,7 @@ const RecipeOverview = () => {
   const [ingredients, setIngredients] = useState(initialIngredients);
   const nextIngredientIdRef = useRef(initialIngredients.length + 1);
   const nextIngredientPositionRef = useRef(initialIngredients.length + 1);
+  const ingredientTipsRef = useRef(null);
   
   const [isSubModalOpen, setIsSubModalOpen] = useState(false);
   const [activeSubIngredients, setActiveSubIngredients] = useState([]);

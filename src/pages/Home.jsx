@@ -13,8 +13,8 @@ const Home = () => {
     { name: 'Italian', image: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=200&q=80' },
     { name: 'Mexican', image: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=200&q=80' },
     { name: 'Japanese', image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=200&q=80' },
-    { name: 'Indian', image: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?auto=format&fit=crop&w=200&q=80' },
-    { name: 'Lebanese', image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=200&q=80' }
+    { name: 'Lebanese', image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=200&q=80' },
+    { name: 'Indian', image: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?auto=format&fit=crop&w=200&q=80' }
   ];
 
   const renderRecentSection = () => {
@@ -194,7 +194,7 @@ const Home = () => {
         <h3 style={{ padding: '0 20px', fontSize: '20px', marginBottom: '16px' }}>My Recipe Book</h3>
         <HorizontalScroll gap="8px">
           <RecipeCard isBookLink onClick={() => navigate('/recipe-book')} />
-          {savedRecipes.length > 0 && (
+          {savedRecipes.length > 0 ? (
             savedRecipes.map((recipe) => (
               <RecipeCard 
                 key={recipe.id}
@@ -205,6 +205,40 @@ const Home = () => {
                 onClick={() => navigate(`/recipe/${recipe.id}`)} 
               />
             ))
+          ) : (
+            <div style={{
+              minWidth: '72%',
+              minHeight: '180px',
+              padding: '24px 0',
+              backgroundColor: 'transparent',
+              border: 'none',
+              borderRadius: '20px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              justifyContent: 'center',
+              textAlign: 'left'
+            }}>
+              <p style={{
+                fontSize: '10px',
+                color: 'var(--text-light)',
+                fontWeight: '400',
+                margin: '0 0 6px 0',
+                maxWidth: '130px',
+                lineHeight: '1.4'
+              }}>
+                No saved recipes yet
+              </p>
+              <p style={{
+                fontSize: '10px',
+                color: 'var(--text-light)',
+                lineHeight: '1.5',
+                margin: 0,
+                maxWidth: '130px'
+              }}>
+                Cook and save<br />a recipe!
+              </p>
+            </div>
           )}
         </HorizontalScroll>
       </section>
