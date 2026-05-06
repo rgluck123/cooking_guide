@@ -20,8 +20,6 @@ const Home = () => {
   const renderRecentSection = () => {
     const hasRecents = recentRecipes.length > 0;
     
-    // Combine recents and recipes with progress for the first carousel
-    // For simplicity in this prototype, we'll just prioritize recipes with progress
     const displayRecipes = hasRecents ? recentRecipes : [
       { id: 'lebanese-spicy-chicken', name: 'Authentic Lebanese Chicken with Rice', time: '40', image: 'https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?auto=format&fit=crop&w=300&q=80' },
       { id: '2', name: 'White Bean Basil Chicken Chili', time: '70', image: 'https://images.unsplash.com/photo-1552611052-33e04de081de?auto=format&fit=crop&w=300&q=80' },
@@ -29,14 +27,10 @@ const Home = () => {
       { id: '4', name: 'Beef Tacos', time: '30', image: 'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?auto=format&fit=crop&w=300&q=80' }
     ];
 
-    // Determine section title based on if any display recipe is actively in progress
-    const anyInProgress = displayRecipes.some(r => recipeProgress[r.id] && recipeProgress[r.id].currentStep > 0);
-
     return (
       <section style={{ marginBottom: '32px' }}>
-        <h3 style={{ padding: '0 20px', fontSize: '20px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {hasRecents || anyInProgress ? <Clock size={20} /> : null}
-          {anyInProgress ? 'Continue Cooking' : 'Recent Recipes'}
+        <h3 style={{ padding: '0 20px', fontSize: '20px', marginBottom: '16px' }}>
+          Recent Recipes
         </h3>
         <HorizontalScroll gap="8px">
           {displayRecipes.map((recipe) => {
@@ -48,7 +42,7 @@ const Home = () => {
               <RecipeCard 
                 key={recipe.id}
                 title={recipe.name} 
-                time={recipe.time.toString().replace(' mins', '')} 
+                time={recipe.time?.toString().replace(' mins', '') || ''} 
                 image={recipe.image} 
                 progress={percent}
                 onClick={() => {
@@ -197,66 +191,20 @@ const Home = () => {
 
       {/* My Recipe Book */}
       <section style={{ marginBottom: '32px' }}>
-        <div 
-          onClick={() => navigate('/recipe-book')}
-          style={{ 
-            padding: '0 20px', 
-            marginBottom: '16px', 
-            display: 'flex', 
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            cursor: 'pointer'
-          }}
-        >
-          <h3 style={{ fontSize: '20px', margin: 0 }}>My Recipe Book</h3>
-          <ChevronRight size={24} color="var(--text-light)" />
-        </div>
+        <h3 style={{ padding: '0 20px', fontSize: '20px', marginBottom: '16px' }}>My Recipe Book</h3>
         <HorizontalScroll gap="8px">
-          {savedRecipes.length > 0 ? (
+          <RecipeCard isBookLink onClick={() => navigate('/recipe-book')} />
+          {savedRecipes.length > 0 && (
             savedRecipes.map((recipe) => (
               <RecipeCard 
                 key={recipe.id}
                 title={recipe.name} 
-                time={recipe.time.replace(' mins', '')} 
+                time={recipe.time?.toString().replace(' mins', '') || ''} 
                 image={recipe.image} 
                 isModified={recipe.modifications && recipe.modifications.length > 0}
                 onClick={() => navigate(`/recipe/${recipe.id}`)} 
               />
             ))
-          ) : (
-            <div style={{
-              minWidth: '72%',
-              minHeight: '180px',
-              padding: '24px 0',
-              backgroundColor: 'transparent',
-              border: 'none',
-              borderRadius: '20px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
-              justifyContent: 'center',
-              textAlign: 'left'
-            }}>
-              <p style={{
-                fontSize: '10px',
-                color: 'var(--text-light)',
-                fontWeight: '400',
-                margin: '0 0 6px 0',
-                maxWidth: '130px',
-                lineHeight: '1.4'
-              }}>
-                No saved recipes yet
-              </p>
-              <p style={{
-                fontSize: '10px',
-                color: 'var(--text-light)',
-                lineHeight: '1.5',
-                margin: 0,
-                maxWidth: '130px'
-              }}>
-                Cook and save<br />a recipe!
-              </p>
-            </div>
           )}
         </HorizontalScroll>
       </section>

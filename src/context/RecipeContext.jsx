@@ -20,7 +20,11 @@ const defaultRecentRecipes = [
 
 export const RecipeProvider = ({ children }) => {
   const [savedRecipes, setSavedRecipes] = useState(() => getStoredJson('savedRecipes', []));
-  const [recentRecipes, setRecentRecipes] = useState(() => getStoredJson('recentRecipes', defaultRecentRecipes));
+  const [recentRecipes, setRecentRecipes] = useState(() => {
+    const stored = getStoredJson('recentRecipes', null);
+    if (!stored || stored.length < 4) return defaultRecentRecipes;
+    return stored;
+  });
   const [recipeProgress, setRecipeProgress] = useState(() => getStoredJson('recipeProgress', {}));
   const [liveCookingDefaults, setLiveCookingDefaults] = useState(() => getStoredJson('liveCookingDefaults', {
     voiceOverEnabled: true,

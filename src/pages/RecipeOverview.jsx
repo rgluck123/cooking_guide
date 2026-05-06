@@ -511,7 +511,7 @@ const RecipeOverview = () => {
           setIsSelectMode(false);
           setSelectedIngredientIds([]);
         }} 
-        ingredient={activeSubIngredients} 
+        ingredients={activeSubIngredients} 
         onSubstitute={handleSubstitute}
       />
 

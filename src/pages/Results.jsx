@@ -44,7 +44,7 @@ const Results = () => {
       combined.push({
          id: saved.id,
          title: saved.name,
-         time: saved.time.replace(' mins', '').trim(),
+         time: saved.time?.toString().replace(' mins', '').trim() || '',
          protein: dynamicProtein,
          difficulty: saved.difficulty || 'Intermediate',
          image: saved.image,
