@@ -110,7 +110,10 @@ const SaveRecipe = () => {
           if (selectedModifications.has(modToRemove.id)) {
             toggleSelectModification(modToRemove.id);
             if (voiceOutputEnabled) {
-              window.speechSynthesis.speak(new SpeechSynthesisUtterance(`Removed ${ingredientName}`));
+              const utterance = new SpeechSynthesisUtterance(`Removed ${ingredientName}`);
+              utterance.lang = 'en-US';
+              try { window.speechSynthesis.cancel(); } catch(e) {}
+              window.speechSynthesis.speak(utterance);
             }
           }
         }
@@ -120,7 +123,7 @@ const SaveRecipe = () => {
         handleSaveRecipe();
       }
       // CONFIRM (Yes)
-      else if (/^yes$/i.test(transcript)) {
+      else if (/(yes( i want)?|sure|yeah|yep|save it)/i.test(transcript)) {
         handleSaveRecipe();
       }
       // SPEECH OUTPUT TOGGLE
@@ -133,7 +136,10 @@ const SaveRecipe = () => {
       // SAY AGAIN
       else if (/(again( please)?|(please )?(say )?again|(please )?speak again)/i.test(transcript)) {
         if (voiceOutputEnabled) {
-          window.speechSynthesis.speak(new SpeechSynthesisUtterance("You are on the save recipe screen. You can say Save Recipe to finish."));
+          const utterance = new SpeechSynthesisUtterance("You are on the save recipe screen. You can say Save Recipe to finish.");
+          utterance.lang = 'en-US';
+          try { window.speechSynthesis.cancel(); } catch(e) {}
+          window.speechSynthesis.speak(utterance);
         }
       }
       // CLOSE / BACK
@@ -149,7 +155,7 @@ const SaveRecipe = () => {
 
     return () => {
       if (loopTimeoutRef.current) clearTimeout(loopTimeoutRef.current);
-      recognition.abort();
+      try { recognition.abort(); } catch(e) {}
     };
   }, [voiceEnabled, modifications, selectedModifications, voiceOutputEnabled]);
 
@@ -157,8 +163,9 @@ const SaveRecipe = () => {
     // 1. Force Speech Synthesis Unlock on user interaction
     if (!voiceOutputEnabled) {
        const unlockUtterance = new SpeechSynthesisUtterance('');
+       unlockUtterance.lang = 'en-US';
        unlockUtterance.volume = 0;
-       window.speechSynthesis.speak(unlockUtterance);
+       try { window.speechSynthesis.speak(unlockUtterance); } catch(e) {}
     }
 
     // 2. Force Microphone Permission Prompt using getUserMedia
@@ -178,14 +185,14 @@ const SaveRecipe = () => {
     setVoiceEnabled(prev => {
       const nextValue = !prev;
       if (!nextValue) {
-        window.speechSynthesis.cancel();
+        try { window.speechSynthesis.cancel(); } catch(e) {}
         if (loopTimeoutRef.current) {
           clearTimeout(loopTimeoutRef.current);
           loopTimeoutRef.current = null;
         }
-        recognitionRef.current?.abort();
+        try { recognitionRef.current?.abort(); } catch(e) {}
       } else {
-        recognitionRef.current?.start?.();
+        try { recognitionRef.current?.start?.(); } catch(e) {}
       }
       return nextValue;
     });
@@ -197,8 +204,9 @@ const SaveRecipe = () => {
       if (nextValue) {
         // Unlock speech synthesis on user interaction
         const unlockUtterance = new SpeechSynthesisUtterance('');
+        unlockUtterance.lang = 'en-US';
         unlockUtterance.volume = 0;
-        window.speechSynthesis.speak(unlockUtterance);
+        try { window.speechSynthesis.speak(unlockUtterance); } catch(e) {}
       }
       return nextValue;
     });

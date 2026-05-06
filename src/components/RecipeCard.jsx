@@ -1,7 +1,7 @@
 import React from 'react';
 import { Clock, Book } from 'lucide-react';
 
-const RecipeCard = ({ title, time, image, isBookLink = false, progress, onClick }) => {
+const RecipeCard = ({ title, time, image, isBookLink = false, progress, isModified = false, onClick }) => {
   if (isBookLink) {
     return (
       <div 
@@ -93,6 +93,27 @@ const RecipeCard = ({ title, time, image, isBookLink = false, progress, onClick 
         borderBottom: '1px solid var(--border)',
         position: 'relative'
       }}>
+        {/* Modified Indicator */}
+        {isModified && (
+          <div style={{
+            position: 'absolute',
+            top: '8px',
+            right: '8px',
+            backgroundColor: 'var(--surface)',
+            color: 'var(--accent-orange)',
+            fontSize: '10px',
+            fontWeight: '800',
+            padding: '4px 8px',
+            borderRadius: '12px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            border: '1px solid rgba(224, 122, 95, 0.3)',
+            zIndex: 2,
+            letterSpacing: '0.3px',
+            textTransform: 'uppercase'
+          }}>
+            Modified
+          </div>
+        )}
       </div>
       
       {/* Bottom Half Text Area */}

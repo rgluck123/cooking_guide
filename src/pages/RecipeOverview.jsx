@@ -42,10 +42,14 @@ const RecipeOverview = () => {
   const nextIngredientPositionRef = useRef(initialIngredients.length + 1);
   
   const [isSubModalOpen, setIsSubModalOpen] = useState(false);
-  const [activeSubIngredient, setActiveSubIngredient] = useState(null);
+  const [activeSubIngredients, setActiveSubIngredients] = useState([]);
   
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const [activeActionIngredient, setActiveActionIngredient] = useState(null);
+  const [activeActionTargetIds, setActiveActionTargetIds] = useState([]);
+
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIngredientIds, setSelectedIngredientIds] = useState([]);
 
   const [isDeboneModalOpen, setIsDeboneModalOpen] = useState(false);
   const [isAddIngredientModalOpen, setIsAddIngredientModalOpen] = useState(false);
@@ -54,38 +58,95 @@ const RecipeOverview = () => {
   const [showSavedNotice, setShowSavedNotice] = useState(false);
   const [savedNoticeText, setSavedNoticeText] = useState('Saved to my recipe book');
   const saveNoticeTimeoutRef = useRef(null);
-  const ingredientTipsRef = useRef(null);
   const recipeBookId = 'lebanese-spicy-chicken';
-  const isSavedToRecipeBook = savedRecipes.some((recipe) => recipe.id === recipeBookId);
+  const savedRecipeInstance = savedRecipes.find((recipe) => recipe.id === recipeBookId);
+  const isSavedToRecipeBook = !!savedRecipeInstance;
+  const hasSavedModifications = isSavedToRecipeBook && savedRecipeInstance.modifications && savedRecipeInstance.modifications.length > 0;
 
-  const handleRemove = (item) => {
-    setIngredients(prev => prev.map(i => i.id === item.id ? { ...i, removed: true } : i));
-    setIsActionMenuOpen(false);
+  const handleToggleSelect = (id) => {
+    setSelectedIngredientIds(prev => 
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
   };
 
-  const handleRestore = (item) => {
-    setIngredients(prev => prev.map(i => i.id === item.id ? { ...i, removed: false } : i));
+  const handleSwipeLeft = (item) => {
+    const targetIds = selectedIngredientIds.includes(item.id) ? selectedIngredientIds : [item.id];
+    const isSubbed = item.edited || item.replacedIds;
+
+    if (isSubbed) {
+      setIngredients(prev => {
+        let next = [...prev];
+        targetIds.forEach(id => {
+          const target = next.find(i => i.id === id);
+          if (target && target.replacedIds) {
+            next = next.filter(i => i.id !== id);
+            next = next.map(i => target.replacedIds.includes(i.id) ? { ...i, removed: false, hidden: false } : i);
+          } else if (target && target.edited) {
+            next = next.map(i => i.id === id ? { ...i, name: i.originalName, quantity: i.originalQuantity || i.quantity, edited: false } : i);
+          }
+        });
+        return next;
+      });
+    } else {
+      const willRemove = !item.removed;
+      setIngredients(prev => prev.map(i => targetIds.includes(i.id) ? { ...i, removed: willRemove } : i));
+    }
+
     setIsActionMenuOpen(false);
+    if (isSelectMode) {
+      setSelectedIngredientIds([]);
+      setIsSelectMode(false);
+    }
   };
 
-  const openSubstitute = (item) => {
-    setActiveSubIngredient(item);
+  const handleSwipeRight = (item) => {
+    const targetIds = selectedIngredientIds.includes(item.id) ? selectedIngredientIds : [item.id];
+    const targetItems = ingredients.filter(i => targetIds.includes(i.id));
+    setActiveSubIngredients(targetItems);
     setIsSubModalOpen(true);
     setIsActionMenuOpen(false);
   };
 
   const handleLongPress = (item) => {
+    const targetIds = selectedIngredientIds.includes(item.id) ? selectedIngredientIds : [item.id];
     setActiveActionIngredient(item);
+    setActiveActionTargetIds(targetIds);
     setIsActionMenuOpen(true);
   };
 
-  const handleSubstitute = (id, newName, newQty) => {
-    setIngredients(prev => prev.map(item => {
-      if (item.id === id) {
-        return { ...item, name: newName, quantity: newQty, edited: true };
+  const handleSubstitute = (ids, newName, newQty) => {
+    setIngredients(prev => {
+      let next = [...prev];
+      if (ids.length === 1) {
+        return next.map(item => {
+          if (item.id === ids[0]) {
+            return { ...item, name: newName, quantity: newQty, edited: true, originalQuantity: item.originalQuantity || item.quantity };
+          }
+          return item;
+        });
+      } else {
+        next = next.map(item => ids.includes(item.id) ? { ...item, hidden: true } : item);
+        const selectedItems = prev.filter(i => ids.includes(i.id));
+        const minPos = Math.min(...selectedItems.map(i => i.originalPosition));
+        const newId = nextIngredientIdRef.current;
+        nextIngredientIdRef.current += 1;
+        next.push({
+           id: newId,
+           name: newName,
+           quantity: newQty,
+           originalName: newName,
+           edited: false,
+           removed: false,
+           originalPosition: minPos,
+           replacedIds: ids
+        });
+        return next;
       }
-      return item;
-    }));
+    });
+    if (isSelectMode) {
+      setSelectedIngredientIds([]);
+      setIsSelectMode(false);
+    }
   };
 
   const handleAddIngredient = () => {
@@ -221,7 +282,27 @@ const RecipeOverview = () => {
         borderTopRightRadius: '32px',
         padding: '32px 24px'
       }}>
-        <h1 style={{ fontSize: '28px', fontWeight: '800', marginBottom: '16px', lineHeight: '1.2' }}>Authentic Lebanese Chicken with Rice</h1>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '16px' }}>
+          <h1 style={{ fontSize: '28px', fontWeight: '800', margin: 0, lineHeight: '1.2' }}>Authentic Lebanese Chicken with Rice</h1>
+          {hasSavedModifications && (
+            <div style={{
+              backgroundColor: 'var(--surface)',
+              color: 'var(--accent-orange)',
+              fontSize: '11px',
+              fontWeight: '800',
+              padding: '6px 10px',
+              borderRadius: '12px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              border: '1px solid rgba(224, 122, 95, 0.3)',
+              letterSpacing: '0.3px',
+              textTransform: 'uppercase',
+              flexShrink: 0,
+              marginTop: '4px'
+            }}>
+              Modified
+            </div>
+          )}
+        </div>
         
         <div style={{ display: 'flex', gap: '16px', marginBottom: '32px' }}>
           <div style={{ backgroundColor: 'var(--accent-green-light)', color: 'var(--accent-green)', padding: '6px 12px', borderRadius: '16px', fontWeight: '700', fontSize: '14px' }}>40 min</div>
@@ -245,23 +326,51 @@ const RecipeOverview = () => {
               <Info size={16} color="var(--text-light)" />
             </button>
 
+            <button
+              onClick={() => {
+                setIsSelectMode(!isSelectMode);
+                if (isSelectMode) setSelectedIngredientIds([]);
+              }}
+              style={{
+                marginLeft: 'auto',
+                padding: '6px 12px',
+                borderRadius: '16px',
+                border: isSelectMode ? '1px solid rgba(0,0,0,0.1)' : '1px solid var(--border)',
+                backgroundColor: isSelectMode ? 'var(--accent-green-light)' : 'transparent',
+                color: isSelectMode ? 'var(--accent-green)' : 'var(--text-light)',
+                fontSize: '13px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: isSelectMode ? 'inset 0 2px 4px rgba(0,0,0,0.08)' : 'none'
+              }}
+            >
+              {isSelectMode ? 'Done' : 'Select'}
+            </button>
+
             {showIngredientTips && (
-              <div style={{ position: 'absolute', top: '40px', left: 'calc(50% - 8px)', transform: 'translateX(-50%)', zIndex: 5, width: 'min(360px, calc(100vw - 64px))', backgroundColor: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '10px 12px', boxShadow: 'var(--shadow)' }}>
-                <p style={{ fontSize: '13px', color: 'var(--text-light)', margin: 0, lineHeight: '1.5' }}>
-                  Swipe right<ArrowRight size={14} style={{ display: 'inline-block', verticalAlign: 'middle', marginLeft: '2px', position: 'relative', top: '-1px' }} /> to substitute, left<ArrowLeft size={14} style={{ display: 'inline-block', verticalAlign: 'middle', marginLeft: '2px', position: 'relative', top: '-1px' }} /> to remove or restore, or long press for options.
-                </p>
+              <div style={{ position: 'absolute', top: '40px', left: 'calc(50% - 8px)', transform: 'translateX(-50%)', zIndex: 5, width: 'min(360px, calc(100vw - 64px))', backgroundColor: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', boxShadow: 'var(--shadow)' }}>
+                <ul style={{ fontSize: '13px', color: 'var(--text-light)', margin: 0, paddingLeft: '16px', lineHeight: '1.6', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <li>Tap <strong>Select</strong> to choose multiple ingredients.</li>
+                  <li>Swipe right<ArrowRight size={14} style={{ display: 'inline-block', verticalAlign: 'middle', margin: '0 2px', position: 'relative', top: '-1px' }} /> to substitute, or left<ArrowLeft size={14} style={{ display: 'inline-block', verticalAlign: 'middle', margin: '0 2px', position: 'relative', top: '-1px' }} /> to remove/restore.</li>
+                  <li>Swipe or long press a selected item to perform actions on the whole group.</li>
+                  <li>Swipe left<ArrowLeft size={14} style={{ display: 'inline-block', verticalAlign: 'middle', margin: '0 2px', position: 'relative', top: '-1px' }} /> on a substituted item to reset it.</li>
+                </ul>
               </div>
             )}
           </div>
           
           <div>
-            {orderedIngredients.map(item => (
+            {orderedIngredients.filter(i => !i.hidden).map(item => (
               <InteractiveIngredient 
                 key={item.id} 
                 item={item} 
-                onSwipeLeft={item.removed ? handleRestore : handleRemove}
-                onSwipeRight={item.removed ? handleRestore : openSubstitute}
+                onSwipeLeft={handleSwipeLeft}
+                onSwipeRight={handleSwipeRight}
                 onLongPress={handleLongPress}
+                isSelectMode={isSelectMode}
+                isSelected={selectedIngredientIds.includes(item.id)}
+                onToggleSelect={handleToggleSelect}
               />
             ))}
           </div>
@@ -270,7 +379,7 @@ const RecipeOverview = () => {
             onClick={() => setIsAddIngredientModalOpen(true)}
             style={{
               width: '100%',
-              marginTop: '8px',
+              marginTop: '24px',
               padding: '14px 16px',
               borderRadius: '12px',
               backgroundColor: 'var(--accent-green-light)',
@@ -397,8 +506,12 @@ const RecipeOverview = () => {
       {/* Modals */}
       <SubstituteModal 
         isOpen={isSubModalOpen} 
-        onClose={() => setIsSubModalOpen(false)} 
-        ingredient={activeSubIngredient} 
+        onClose={() => {
+          setIsSubModalOpen(false);
+          setIsSelectMode(false);
+          setSelectedIngredientIds([]);
+        }} 
+        ingredient={activeSubIngredients} 
         onSubstitute={handleSubstitute}
       />
 
@@ -513,24 +626,30 @@ const RecipeOverview = () => {
           }}
         >
           <div onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--bg)', borderTopLeftRadius: '24px', borderTopRightRadius: '24px', padding: '24px' }}>
-            <h3 style={{ fontSize: '18px', marginBottom: '24px', textAlign: 'center' }}>{activeActionIngredient.name}</h3>
+            <h3 style={{ fontSize: '18px', marginBottom: '24px', textAlign: 'center' }}>
+              {activeActionTargetIds.length > 1 ? `${activeActionTargetIds.length} Ingredients Selected` : activeActionIngredient.name}
+            </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {!activeActionIngredient.removed && (
+              {(!activeActionIngredient.removed || activeActionTargetIds.length > 1) && (
                 <button 
-                  onClick={() => openSubstitute(activeActionIngredient)}
+                  onClick={() => handleSwipeRight(activeActionIngredient)}
                   style={{ padding: '16px', borderRadius: '12px', backgroundColor: 'var(--accent-green-light)', color: 'var(--accent-green)', fontWeight: '700', border: 'none', fontSize: '16px' }}
                 >
-                  Substitute Ingredient
+                  Substitute {activeActionTargetIds.length > 1 ? 'Group' : 'Ingredient'}
                 </button>
               )}
               <button 
-                onClick={() => activeActionIngredient.removed ? handleRestore(activeActionIngredient) : handleRemove(activeActionIngredient)}
-                style={{ padding: '16px', borderRadius: '12px', backgroundColor: activeActionIngredient.removed ? 'var(--accent-green-light)' : '#fff7ed', color: activeActionIngredient.removed ? 'var(--accent-green)' : '#c2410c', fontWeight: '700', border: 'none', fontSize: '16px' }}
+                onClick={() => handleSwipeLeft(activeActionIngredient)}
+                style={{ padding: '16px', borderRadius: '12px', backgroundColor: activeActionIngredient.removed && activeActionTargetIds.length === 1 ? 'var(--accent-green-light)' : '#fff7ed', color: activeActionIngredient.removed && activeActionTargetIds.length === 1 ? 'var(--accent-green)' : '#c2410c', fontWeight: '700', border: 'none', fontSize: '16px' }}
               >
-                {activeActionIngredient.removed ? 'Restore Ingredient' : 'Remove Ingredient'}
+                {activeActionIngredient.edited || activeActionIngredient.replacedIds ? 'Reset' : (activeActionIngredient.removed && activeActionTargetIds.length === 1 ? 'Restore' : 'Remove')} {activeActionTargetIds.length > 1 ? 'Group' : 'Ingredient'}
               </button>
               <button 
-                onClick={() => setIsActionMenuOpen(false)}
+                onClick={() => {
+                  setIsActionMenuOpen(false);
+                  setIsSelectMode(false);
+                  setSelectedIngredientIds([]);
+                }}
                 style={{ padding: '16px', borderRadius: '12px', backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)', fontWeight: '600', fontSize: '16px', marginTop: '8px' }}
               >
                 Cancel

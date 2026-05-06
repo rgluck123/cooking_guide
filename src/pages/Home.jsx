@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, SlidersHorizontal, User, Clock } from 'lucide-react';
+import { Search, SlidersHorizontal, User, Clock, ChevronRight } from 'lucide-react';
 import HorizontalScroll from '../components/HorizontalScroll';
 import RecipeCard from '../components/RecipeCard';
 import { useRecipes } from '../context/RecipeContext';
@@ -11,10 +11,10 @@ const Home = () => {
 
   const cuisines = [
     { name: 'Italian', image: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=200&q=80' },
-    { name: 'Lebanese', image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=200&q=80' },
     { name: 'Mexican', image: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=200&q=80' },
     { name: 'Japanese', image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=200&q=80' },
-    { name: 'Indian', image: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?auto=format&fit=crop&w=200&q=80' }
+    { name: 'Indian', image: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?auto=format&fit=crop&w=200&q=80' },
+    { name: 'Lebanese', image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=200&q=80' }
   ];
 
   const renderRecentSection = () => {
@@ -197,9 +197,21 @@ const Home = () => {
 
       {/* My Recipe Book */}
       <section style={{ marginBottom: '32px' }}>
-        <h3 style={{ padding: '0 20px', fontSize: '20px', marginBottom: '16px' }}>My Recipe Book</h3>
+        <div 
+          onClick={() => navigate('/recipe-book')}
+          style={{ 
+            padding: '0 20px', 
+            marginBottom: '16px', 
+            display: 'flex', 
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            cursor: 'pointer'
+          }}
+        >
+          <h3 style={{ fontSize: '20px', margin: 0 }}>My Recipe Book</h3>
+          <ChevronRight size={24} color="var(--text-light)" />
+        </div>
         <HorizontalScroll gap="8px">
-          <RecipeCard isBookLink onClick={() => navigate('/recipe-book')} />
           {savedRecipes.length > 0 ? (
             savedRecipes.map((recipe) => (
               <RecipeCard 
@@ -207,6 +219,7 @@ const Home = () => {
                 title={recipe.name} 
                 time={recipe.time.replace(' mins', '')} 
                 image={recipe.image} 
+                isModified={recipe.modifications && recipe.modifications.length > 0}
                 onClick={() => navigate(`/recipe/${recipe.id}`)} 
               />
             ))

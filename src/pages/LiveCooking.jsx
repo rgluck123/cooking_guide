@@ -139,12 +139,23 @@ const LiveCooking = () => {
   const speakStep = () => {
     if (!voiceSupported || !voiceOutputEnabled) return;
     const utterance = new SpeechSynthesisUtterance(`${step.title}. ${step.instruction}`);
+    utterance.lang = 'en-US';
     utterance.rate = 0.95;
     utterance.pitch = 1;
     utterance.volume = 1;
-    window.speechSynthesis.cancel();
+    try { window.speechSynthesis.cancel(); } catch(e) {}
     window.speechSynthesis.speak(utterance);
   };
+
+  const currentStepIndexRef = useRef(currentStepIndex);
+  const showSavePromptRef = useRef(showSavePrompt);
+  const modificationsRef = useRef(modifications);
+
+  useEffect(() => {
+    currentStepIndexRef.current = currentStepIndex;
+    showSavePromptRef.current = showSavePrompt;
+    modificationsRef.current = modifications;
+  }, [currentStepIndex, showSavePrompt, modifications]);
 
   // Voice interaction setup - microphone is on by default in cooking mode
   useEffect(() => {
@@ -175,18 +186,26 @@ const LiveCooking = () => {
       const transcript = event.results[0][0].transcript.toLowerCase().trim();
       console.log('Voice Command:', transcript);
       
+      const stepIsLast = currentStepIndexRef.current === cookingSteps.length - 1;
+      
       // NEXT STEP / FINISH
       if (/(next step|next|done|ok done|next step please|go ahead|next screen|go further|i am ready|all done|finish)/i.test(transcript)) {
-        nextStep();
+        if (stepIsLast) {
+          setShowSavePrompt(true);
+        } else {
+          setCurrentStepIndex(prev => prev + 1);
+        }
       }
       // PREVIOUS STEP / CLOSE TEMPORARY VIEW
       else if (/(previous step|previous|back|go back|please go back|go back please|last step|last screen)/i.test(transcript)) {
-        if (isModifyModalOpen || isMoreOpen || showSavePrompt) {
+        if (isModifyModalOpen || isMoreOpen || showSavePromptRef.current) {
           setIsModifyModalOpen(false);
           setIsMoreOpen(false);
           setShowSavePrompt(false);
         } else {
-          prevStep();
+          if (currentStepIndexRef.current > 0) {
+            setCurrentStepIndex(prev => prev - 1);
+          }
         }
       }
       // HOME SCREEN
@@ -215,7 +234,7 @@ const LiveCooking = () => {
       }
       // MORE INFO / HELP
       else if (/(help|more info|more information|more instructions)/i.test(transcript)) {
-        if (step.id === 2) setIsMoreOpen(true);
+        if (cookingSteps[currentStepIndexRef.current].id === 2) setIsMoreOpen(true);
       }
       // SPEECH OUTPUT TOGGLE
       else if (/(unmute|allow (voice|speech))/i.test(transcript)) {
@@ -234,7 +253,7 @@ const LiveCooking = () => {
       }
       // CONFIRM (Yes)
       else if (/(yes( i want)?|sure|yeah|yep|save it)/i.test(transcript)) {
-        if (showSavePrompt) {
+        if (showSavePromptRef.current) {
           clearProgress(recipeId);
           addRecent({
             id: 'lebanese-spicy-chicken',
@@ -244,12 +263,12 @@ const LiveCooking = () => {
             portions: '2 portions'
           });
           setShowSavePrompt(false);
-          navigate('/save-recipe', { state: { modifications } });
+          navigate('/save-recipe', { state: { modifications: modificationsRef.current } });
         }
       }
       // REJECT (No)
       else if (/(no( i don'?t)?|nope|cancel|don'?t save)/i.test(transcript)) {
-        if (showSavePrompt) {
+        if (showSavePromptRef.current) {
           clearProgress(recipeId);
           setShowSavePrompt(false);
           navigate('/');
@@ -257,11 +276,7 @@ const LiveCooking = () => {
       }
       // SAVE RECIPE
       else if (/save recipe/i.test(transcript)) {
-        if (isLastStep) {
-          setShowSavePrompt(true);
-        } else {
-          setShowSavePrompt(true);
-        }
+        setShowSavePrompt(true);
       }
     };
 
@@ -272,9 +287,9 @@ const LiveCooking = () => {
 
     return () => {
       if (loopTimeoutRef.current) clearTimeout(loopTimeoutRef.current);
-      recognition.abort();
+      try { recognition.abort(); } catch(e) {}
     };
-  }, [voiceEnabled, currentStepIndex]); // Re-run effect dependencies
+  }, [voiceEnabled]); // Re-run ONLY when voiceEnabled toggles
 
   // Speak step instructions when step changes
   useEffect(() => {
@@ -285,8 +300,9 @@ const LiveCooking = () => {
     // 1. Force Speech Synthesis Unlock on user interaction
     if (!voiceOutputEnabled) {
        const unlockUtterance = new SpeechSynthesisUtterance('');
+       unlockUtterance.lang = 'en-US';
        unlockUtterance.volume = 0;
-       window.speechSynthesis.speak(unlockUtterance);
+       try { window.speechSynthesis.speak(unlockUtterance); } catch(e) {}
     }
 
     // 2. Force Microphone Permission Prompt using getUserMedia
@@ -306,14 +322,14 @@ const LiveCooking = () => {
     setVoiceEnabled(prev => {
       const nextValue = !prev;
       if (!nextValue) {
-        window.speechSynthesis.cancel();
+        try { window.speechSynthesis.cancel(); } catch(e) {}
         if (loopTimeoutRef.current) {
           clearTimeout(loopTimeoutRef.current);
           loopTimeoutRef.current = null;
         }
-        recognitionRef.current?.abort();
+        try { recognitionRef.current?.abort(); } catch(e) {}
       } else {
-        recognitionRef.current?.start?.();
+        try { recognitionRef.current?.start?.(); } catch(e) {}
       }
       return nextValue;
     });
@@ -325,8 +341,9 @@ const LiveCooking = () => {
       if (nextValue) {
         // Unlock speech synthesis on user interaction
         const unlockUtterance = new SpeechSynthesisUtterance('');
+        unlockUtterance.lang = 'en-US';
         unlockUtterance.volume = 0;
-        window.speechSynthesis.speak(unlockUtterance);
+        try { window.speechSynthesis.speak(unlockUtterance); } catch(e) {}
       }
       return nextValue;
     });
@@ -621,7 +638,7 @@ const LiveCooking = () => {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
           <div style={{ backgroundColor: 'var(--surface)', borderRadius: '24px', padding: '32px 24px', maxWidth: '480px', width: 'calc(100% - 40px)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)', border: '1px solid var(--border)' }}>
             <h2 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--text)', marginTop: 0, marginBottom: '12px', textAlign: 'center' }}>Perfect! You finished this recipe!</h2>
-            <p style={{ fontSize: '16px', color: 'var(--text-light)', lineHeight: '1.6', marginBottom: '32px', textAlign: 'center' }}>Do you want to save this recipe to "My Recipe"?</p>
+            <p style={{ fontSize: '16px', color: 'var(--text-light)', lineHeight: '1.6', marginBottom: '32px', textAlign: 'center' }}>Do you want to save this recipe to "My Recipe Book"?</p>
             
             <div style={{ display: 'flex', gap: '16px', flexDirection: 'column' }}>
               <button 

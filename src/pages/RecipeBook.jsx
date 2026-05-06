@@ -41,6 +41,7 @@ const RecipeBook = () => {
             border: 'none',
             cursor: 'pointer',
             padding: '8px',
+            marginLeft: '-8px',
             marginRight: '8px',
             color: 'var(--text)',
             display: 'flex',
@@ -66,18 +67,12 @@ const RecipeBook = () => {
       <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
         {savedRecipes.length === 0 ? (
           <div style={{
-            maxWidth: '100%',
-            minHeight: '260px',
-            padding: '28px 20px',
-            backgroundColor: 'rgba(255, 255, 255, 0.65)',
-            border: '1px solid rgba(234, 234, 234, 0.9)',
-            borderRadius: '20px',
-            boxShadow: 'var(--shadow)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            textAlign: 'center'
+            textAlign: 'center',
+            marginTop: '80px'
           }}>
             <p style={{
               fontSize: '16px',
@@ -88,7 +83,7 @@ const RecipeBook = () => {
               No saved recipes yet
             </p>
             <p style={{
-              fontSize: '13px',
+              fontSize: '15px',
               color: 'var(--text-light)',
               lineHeight: '1.6',
               margin: 0,

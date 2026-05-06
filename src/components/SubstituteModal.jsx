@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 import { X, Check } from 'lucide-react';
 
-const SubstituteModal = ({ isOpen, onClose, ingredient, onSubstitute }) => {
-  if (!isOpen || !ingredient) return null;
+const SubstituteModal = ({ isOpen, onClose, ingredients, onSubstitute }) => {
+  if (!isOpen || !ingredients || ingredients.length === 0) return null;
 
   const [customName, setCustomName] = useState('');
   const [customQty, setCustomQty] = useState('');
 
   // Mock recommendations database
   const recommendations = {
-    'Chicken Breast': [
-      { name: 'Chicken Thighs', quantity: '500g' },
+    'Chicken Thighs': [
       { name: 'Tofu', quantity: '400g' },
       { name: 'Chickpeas', quantity: '2 cans' }
     ],
@@ -20,16 +19,24 @@ const SubstituteModal = ({ isOpen, onClose, ingredient, onSubstitute }) => {
     ]
   };
 
-  const recs = recommendations[ingredient.originalName] || [];
+  const isGroup = ingredients.length > 1;
+  const originalName = isGroup ? 'Group' : ingredients[0].originalName;
+  const displayTitle = isGroup ? `${ingredients.length} ingredients` : originalName;
+  
+  const recs = isGroup ? [] : (recommendations[originalName] || []);
 
   const handleSelect = (name, quantity) => {
-    onSubstitute(ingredient.id, name, quantity);
+    onSubstitute(ingredients.map(i => i.id), name, quantity);
+    setCustomName('');
+    setCustomQty('');
     onClose();
   };
 
   const handleCustomSubmit = () => {
     if (customName && customQty) {
-      onSubstitute(ingredient.id, customName, customQty);
+      onSubstitute(ingredients.map(i => i.id), customName, customQty);
+      setCustomName('');
+      setCustomQty('');
       onClose();
     }
   };
@@ -56,7 +63,7 @@ const SubstituteModal = ({ isOpen, onClose, ingredient, onSubstitute }) => {
         overflowY: 'auto'
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <h2 style={{ fontSize: '20px', margin: 0 }}>Substitute {ingredient.originalName}</h2>
+          <h2 style={{ fontSize: '20px', margin: 0 }}>Substitute {displayTitle}</h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
             <X size={24} color="var(--text)" />
           </button>

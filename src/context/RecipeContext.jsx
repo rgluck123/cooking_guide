@@ -11,9 +11,16 @@ const getStoredJson = (key, fallback) => {
   }
 };
 
+const defaultRecentRecipes = [
+  { id: 'lebanese-spicy-chicken', name: 'Authentic Lebanese Chicken with Rice', time: '40 mins', image: 'https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?auto=format&fit=crop&w=300&q=80' },
+  { id: '2', name: 'White Bean Basil Chicken Chili', time: '70 mins', image: 'https://images.unsplash.com/photo-1552611052-33e04de081de?auto=format&fit=crop&w=300&q=80' },
+  { id: '3', name: 'Veggie & Rice Stir-Fry', time: '65 mins', image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=300&q=80' },
+  { id: '4', name: 'Beef Tacos', time: '30 mins', image: 'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?auto=format&fit=crop&w=300&q=80' }
+];
+
 export const RecipeProvider = ({ children }) => {
   const [savedRecipes, setSavedRecipes] = useState(() => getStoredJson('savedRecipes', []));
-  const [recentRecipes, setRecentRecipes] = useState(() => getStoredJson('recentRecipes', []));
+  const [recentRecipes, setRecentRecipes] = useState(() => getStoredJson('recentRecipes', defaultRecentRecipes));
   const [recipeProgress, setRecipeProgress] = useState(() => getStoredJson('recipeProgress', {}));
   const [liveCookingDefaults, setLiveCookingDefaults] = useState(() => getStoredJson('liveCookingDefaults', {
     voiceOverEnabled: true,

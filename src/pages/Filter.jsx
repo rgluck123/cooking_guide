@@ -155,7 +155,7 @@ const Filter = () => {
         zIndex: 30
       }}>
         <button
-          onClick={() => navigate('/results')}
+          onClick={() => navigate('/results', { state: { query: searchTerm, difficulty, protein, portions, time } })}
           style={{
             width: '100%',
             maxWidth: '440px',

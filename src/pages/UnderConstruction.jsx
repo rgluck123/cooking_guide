@@ -6,18 +6,21 @@ const UnderConstruction = () => {
   const navigate = useNavigate();
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      backgroundColor: 'var(--bg)', 
-      display: 'flex', 
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '20px',
-      textAlign: 'center'
-    }}>
+    <div 
+      onClick={() => navigate(-1)}
+      style={{ 
+        minHeight: '100vh', 
+        backgroundColor: 'var(--bg)', 
+        display: 'flex', 
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px',
+        textAlign: 'center',
+        cursor: 'pointer'
+      }}
+    >
       <button 
-        onClick={() => navigate(-1)} 
         style={{ 
           position: 'absolute', 
           top: 'calc(24px + env(safe-area-inset-top))', 
@@ -31,7 +34,8 @@ const UnderConstruction = () => {
           alignItems: 'center', 
           justifyContent: 'center', 
           cursor: 'pointer',
-          boxShadow: 'var(--shadow)'
+          boxShadow: 'var(--shadow)',
+          pointerEvents: 'none'
         }}
       >
         <ChevronLeft size={22} />
@@ -50,25 +54,8 @@ const UnderConstruction = () => {
         <Hammer size={40} color="var(--accent-green)" />
       </div>
 
-      <h1 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '32px' }}>Page under construction</h1>
-
-      <button 
-        onClick={() => navigate(-1)}
-        style={{
-          marginTop: '32px',
-          padding: '14px 48px',
-          backgroundColor: 'white',
-          color: 'var(--text)',
-          border: '1.5px solid var(--text)',
-          borderRadius: '999px',
-          fontWeight: '600',
-          fontSize: '16px',
-          cursor: 'pointer',
-          boxShadow: 'var(--shadow)'
-        }}
-      >
-        Go back
-      </button>
+      <h1 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '8px' }}>Page under construction</h1>
+      <p style={{ fontSize: '15px', color: 'var(--text-light)' }}>Tap anywhere to go back</p>
     </div>
   );
 };
