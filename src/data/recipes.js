@@ -29,8 +29,8 @@ export const initialRecipes = {
       {
         id: 2,
         title: "Debone the chicken",
-        instruction: "Let the cooked chicken cool for a few minutes. Carefully remove all bones and skin, shredding the meat into bite-sized pieces.",
-        image: "https://images.unsplash.com/photo-1551782450-a2132b4ba21d?auto=format&fit=crop&w=400&q=80",
+        instruction: "Follow the detailed guide to feel the bone, slice along it, clear the joints, and remove the bone safely.",
+        image: "/cooking_guide/images/deboning/debone_step_1.png",
         hasTimer: false
       },
       {

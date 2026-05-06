@@ -1,9 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { Play, Pause, RotateCcw } from 'lucide-react';
 
-const CookingTimer = ({ durationInSeconds }) => {
+const CookingTimer = forwardRef(({ durationInSeconds }, ref) => {
   const [timeLeft, setTimeLeft] = useState(durationInSeconds);
   const [isActive, setIsActive] = useState(false);
+
+  useImperativeHandle(ref, () => ({
+    start: () => setIsActive(true),
+    pause: () => setIsActive(false),
+    reset: () => {
+      setIsActive(false);
+      setTimeLeft(durationInSeconds);
+    },
+    toggle: () => setIsActive(prev => !prev)
+  }));
 
   useEffect(() => {
     // Reset timer if duration prop changes (i.e. moving to a new step)
@@ -85,6 +95,6 @@ const CookingTimer = ({ durationInSeconds }) => {
       </div>
     </div>
   );
-};
+});
 
 export default CookingTimer;

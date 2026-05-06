@@ -6,20 +6,24 @@ const DeboningModal = ({ isOpen, onClose }) => {
 
   const steps = [
     {
-      instruction: "Let the cooked chicken cool for a few minutes until it's safe to handle.",
-      image: "https://images.unsplash.com/photo-1626082895617-2c6de34f6af3?auto=format&fit=crop&w=400&q=80"
+      title: "Feel the bone",
+      instruction: "Use your thumb to find the bone running through the center.",
+      image: "/cooking_guide/images/deboning/debone_step_1.png"
     },
     {
-      instruction: "Carefully remove all bones and skin from the thighs.",
-      image: "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?auto=format&fit=crop&w=400&q=80"
+      title: "Slice along the bone",
+      instruction: "Cut carefully and tightly against the bone's edge.",
+      image: "/cooking_guide/images/deboning/debone_step_2.png"
     },
     {
-      instruction: "Shred the meat into bite-sized pieces using two forks.",
-      image: "https://images.unsplash.com/photo-1585325701165-351af9ad665e?auto=format&fit=crop&w=400&q=80"
+      title: "Clear the joints",
+      instruction: "Slide the knife tip under the joint to free it.",
+      image: "/cooking_guide/images/deboning/debone_step_3.png"
     },
     {
-      instruction: "Work slowly to ensure no small bones remain in the shredded meat.",
-      image: "https://images.unsplash.com/photo-1614398751058-eb2e0bf63e53?auto=format&fit=crop&w=400&q=80"
+      title: "Lift and remove",
+      instruction: "Grip the bone and use the knife to slice it free.",
+      image: "/cooking_guide/images/deboning/debone_step_4.png"
     }
   ];
 
@@ -45,7 +49,7 @@ const DeboningModal = ({ isOpen, onClose }) => {
         overflowY: 'auto'
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <h2 style={{ fontSize: '24px', fontWeight: '800', margin: 0, fontFamily: 'var(--heading)' }}>Tips for Deboning</h2>
+          <h2 style={{ fontSize: '24px', fontWeight: '800', margin: 0, fontFamily: 'var(--heading)' }}>Deboning Steps</h2>
           <button onClick={onClose} style={{ background: 'var(--accent-green-light)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             <X size={20} color="var(--accent-green)" />
           </button>
@@ -64,12 +68,17 @@ const DeboningModal = ({ isOpen, onClose }) => {
                 }}>
                   {i + 1}
                 </div>
-                <p style={{ lineHeight: '1.5', margin: 0, color: 'var(--text)', fontWeight: '600', fontSize: '15px' }}>
-                  {step.instruction}
-                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: 'var(--text)', textTransform: 'capitalize' }}>
+                    {step.title}
+                  </h3>
+                  <p style={{ lineHeight: '1.5', margin: 0, color: 'var(--text-light)', fontWeight: '500', fontSize: '14px' }}>
+                    {step.instruction}
+                  </p>
+                </div>
               </div>
               <div style={{ width: '100%', height: '180px', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border)' }}>
-                <img src={step.image} alt={`Step ${i+1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={step.image} alt={step.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
             </div>
           ))}

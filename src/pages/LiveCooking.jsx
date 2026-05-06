@@ -32,6 +32,7 @@ const LiveCooking = () => {
   const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(liveCookingDefaults.voiceOverEnabled);
   const [voiceSupported, setVoiceSupported] = useState(true);
   const recognitionRef = useRef(null);
+  const timerRef = useRef(null);
   const loopTimeoutRef = useRef(null);
   const touchStartX = useRef(0);
 
@@ -167,16 +168,23 @@ const LiveCooking = () => {
           setIsModifyModalOpen(false);
           return;
         }
+        if (/(ginger|chili|pepper|salt|cumin|coriander|cinnamon)/i.test(transcript) && !transcript.includes(' ')) {
+          setModifyInput(prev => ({ ...prev, name: transcript }));
+          if (voiceOutputEnabled) {
+            window.speechSynthesis.speak(new SpeechSynthesisUtterance(`Set ingredient to ${transcript}`));
+          }
+          return;
+        }
       }
 
-      if (/(next step|next|done|ok done)/i.test(transcript)) {
+      if (/(next step|next|done|ok done|go ahead|next screen|go further|i am ready|all done)/i.test(transcript)) {
         if (currentStepIndexRef.current === visibleSteps.length - 1) {
           setShowSavePrompt(true);
         } else {
           setCurrentStepIndex(prev => prev + 1);
         }
       }
-      else if (/(previous step|previous|back)/i.test(transcript)) {
+      else if (/(previous step|previous|back|go back|last step|last screen)/i.test(transcript)) {
         if (isModifyModalOpen || isDeboneModalOpen || showSavePromptRef.current) {
           setIsModifyModalOpen(false);
           setIsDeboneModalOpen(false);
@@ -188,12 +196,46 @@ const LiveCooking = () => {
       else if (/(home screen|home page)/i.test(transcript)) {
         handleExit();
       }
-      else if (/(modify|do modification)/i.test(transcript)) {
+      else if (/(modify|do modification|put modification)/i.test(transcript)) {
         setIsModifyModalOpen(true);
       }
-      else if (transcript.startsWith('add ') || transcript.startsWith('include ')) {
-        const itemName = transcript.replace(/^(add|include) /, '').trim();
-        if (itemName) {
+      else if (/(start|launch|set) (the )?timer|start (the )?countdown/i.test(transcript)) {
+        timerRef.current?.start();
+      }
+      else if (/(pause|stop|halt) (the )?timer|pause|pause (the )?time|stop (the )?time/i.test(transcript)) {
+        timerRef.current?.pause();
+      }
+      else if (/reset (the )?(timer|time)/i.test(transcript)) {
+        timerRef.current?.reset();
+      }
+      else if (/(help|more info|more information|more instructions)/i.test(transcript)) {
+        if (step?.id === 2) setIsDeboneModalOpen(true);
+      }
+      else if (/(show )?recipe overview|show (all )?recipe steps/i.test(transcript)) {
+        navigate('/recipe-overview', { state: { recipeId } });
+      }
+      else if (/(close|go to recipe|go to step)/i.test(transcript)) {
+        setIsModifyModalOpen(false);
+        setIsDeboneModalOpen(false);
+        setShowSavePrompt(false);
+      }
+      else if (transcript.startsWith('add ') || transcript.startsWith('include ') || transcript.startsWith('remove ')) {
+        const isRemove = transcript.startsWith('remove ');
+        const itemName = transcript.replace(/^(add|include|remove) /, '').trim();
+        
+        if (isRemove) {
+          // Find the ingredient in the current step and "remove" it (hide it)
+          // This is a bit complex as it affects the activeRecipe state which is in context.
+          // For now, let's just speak a confirmation if it was a modification we added.
+          const modToUndo = modificationsRef.current.find(m => m.name.toLowerCase() === itemName && m.stepId === step?.id);
+          if (modToUndo) {
+            handleUndoModification(modToUndo.id);
+            if (voiceOutputEnabled) {
+              const utterance = new SpeechSynthesisUtterance(`Removed ${itemName}`);
+              window.speechSynthesis.speak(utterance);
+            }
+          }
+        } else if (itemName) {
           setModifications(prev => [...prev, {
             id: Date.now(),
             name: itemName,
@@ -207,19 +249,19 @@ const LiveCooking = () => {
           }
         }
       }
-      else if (/(unmute|allow voice)/i.test(transcript)) {
+      else if (/(unmute|allow voice|allow speech)/i.test(transcript)) {
         setVoiceOutputEnabled(true);
       }
-      else if (/(mute|turn off voice)/i.test(transcript)) {
+      else if (/(mute|turn off voice|turn off speech|disable voice|disable speech)/i.test(transcript)) {
         setVoiceOutputEnabled(false);
         try { window.speechSynthesis.cancel(); } catch(e) { /* ignore */ }
       }
-      else if (/(again|say again)/i.test(transcript)) {
+      else if (/(again|say again|speak again)/i.test(transcript)) {
         speakStep();
       }
-      else if (/(yes|sure|save it)/i.test(transcript)) {
-        if (showSavePromptRef.current) {
-          // DO NOT clearProgress here. Wait until actual save.
+      else if (/(yes|sure|save it|save recipe)/i.test(transcript)) {
+        if (showSavePromptRef.current || /save recipe/i.test(transcript)) {
+          // ...
           addRecent({
             id: 'authentic-lebanese-chicken',
             name: 'Authentic Lebanese Chicken with Rice',
@@ -391,7 +433,7 @@ const LiveCooking = () => {
 
           {step?.hasTimer && (
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
-              <CookingTimer durationInSeconds={step.timerSeconds} />
+              <CookingTimer ref={timerRef} durationInSeconds={step.timerSeconds} />
             </div>
           )}
         </div>
@@ -455,6 +497,11 @@ const LiveCooking = () => {
           </div>
         </div>
       )}
+
+      <DeboningModal 
+        isOpen={isDeboneModalOpen} 
+        onClose={() => setIsDeboneModalOpen(false)} 
+      />
     </div>
   );
 };
