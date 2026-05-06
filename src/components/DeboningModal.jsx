@@ -77,8 +77,24 @@ const DeboningModal = ({ isOpen, onClose }) => {
                   </p>
                 </div>
               </div>
-              <div style={{ width: '100%', height: '180px', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border)' }}>
-                <img src={step.image} alt={step.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div style={{ 
+                width: '100%', 
+                aspectRatio: '16 / 10', 
+                borderRadius: '16px', 
+                overflow: 'hidden', 
+                border: '1px solid var(--border)',
+                backgroundColor: '#f5f5f5' // Placeholder while loading
+              }}>
+                <img 
+                  src={step.image} 
+                  alt={step.title} 
+                  style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    objectFit: 'cover',
+                    display: 'block'
+                  }} 
+                />
               </div>
             </div>
           ))}

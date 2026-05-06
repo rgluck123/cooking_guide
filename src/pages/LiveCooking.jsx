@@ -4,11 +4,12 @@ import { Home, Mic, MicOff, Pencil, Volume2, VolumeX, Info } from 'lucide-react'
 import { useRecipes } from '../context/RecipeContext';
 import CookingTimer from '../components/CookingTimer';
 import DeboningModal from '../components/DeboningModal';
+import SubstituteModal from '../components/SubstituteModal';
 
 const LiveCooking = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { addRecent, liveCookingDefaults, recipeProgress, updateProgress, clearProgress, activeRecipe, setActiveRecipeById, testingMode } = useRecipes();
+  const { addRecent, liveCookingDefaults, recipeProgress, updateProgress, clearProgress, activeRecipe, setActiveRecipeById, testingMode, updateActiveRecipeIngredients } = useRecipes();
   
   const recipeId = location.state?.recipeId || 'authentic-lebanese-chicken';
 
@@ -25,6 +26,7 @@ const LiveCooking = () => {
 
   const [isModifyModalOpen, setIsModifyModalOpen] = useState(false);
   const [isDeboneModalOpen, setIsDeboneModalOpen] = useState(false);
+  const [isSubstituteModalOpen, setIsSubstituteModalOpen] = useState(false);
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [modifications, setModifications] = useState([]);
   const [modifyInput, setModifyInput] = useState({ name: '', amount: '', notes: '' });
@@ -87,6 +89,17 @@ const LiveCooking = () => {
       setModifyInput({ name: '', amount: '', notes: '' });
     }
     setIsModifyModalOpen(false);
+  };
+
+  const handleSubstitute = (ids, name, quantity) => {
+    const newIngredients = activeRecipe.ingredients.map(ing => {
+      if (ids.includes(ing.id)) {
+        return { ...ing, name, quantity, edited: true };
+      }
+      return ing;
+    });
+    updateActiveRecipeIngredients(newIngredients);
+    setIsSubstituteModalOpen(false);
   };
 
   const handleExit = useCallback(() => {
@@ -172,6 +185,20 @@ const LiveCooking = () => {
           setModifyInput(prev => ({ ...prev, name: transcript }));
           if (voiceOutputEnabled) {
             window.speechSynthesis.speak(new SpeechSynthesisUtterance(`Set ingredient to ${transcript}`));
+          }
+          return;
+        }
+      }
+
+      if (isDeboneModalOpen) {
+        if (/(close|dismiss|go back|back|done|ok)/i.test(transcript)) {
+          setIsDeboneModalOpen(false);
+          return;
+        }
+        if (/(scroll down|next instructions|more|down)/i.test(transcript)) {
+          const modalContent = document.querySelector('[style*="overflowY: auto"]');
+          if (modalContent) {
+            modalContent.scrollBy({ top: 300, behavior: 'smooth' });
           }
           return;
         }
@@ -340,7 +367,7 @@ const LiveCooking = () => {
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginLeft: 'auto' }}>
             <button
               onClick={toggleVoiceListening}
-              style={{ minWidth: '44px', minHeight: '44px', borderRadius: '999px', border: `1.5px solid ${voiceEnabled ? 'var(--accent-green)' : 'var(--border)'}`, backgroundColor: voiceEnabled ? 'var(--accent-green-light)' : 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: voiceEnabled ? 'var(--shadow)' : 'none' }}
+              style={{ minWidth: '44px', minHeight: '44px', borderRadius: '999px', border: 'none', backgroundColor: voiceEnabled ? 'var(--accent-green-light)' : 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: 'var(--shadow)' }}
             >
               {voiceEnabled ? <Mic size={18} color="var(--accent-green)" /> : <MicOff size={18} color="var(--text-light)" />}
             </button>
@@ -369,14 +396,6 @@ const LiveCooking = () => {
             <h2 style={{ fontFamily: 'var(--heading)', fontSize: '28px', fontWeight: '700', color: 'var(--text)', margin: 0, lineHeight: 1.3 }}>
               {step?.title}
             </h2>
-            {step?.id === 2 && (
-              <button 
-                onClick={() => setIsDeboneModalOpen(true)}
-                style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <Info size={20} color="var(--accent-green)" />
-              </button>
-            )}
           </div>
 
           <p style={{ fontSize: '15px', color: 'var(--text-light)', lineHeight: '1.8', marginTop: '6px', marginBottom: '20px', textAlign: 'center' }}>
@@ -389,7 +408,7 @@ const LiveCooking = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {stepIngredients.map(ing => (
                   <div key={ing.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--text)', fontSize: '15px', fontWeight: '600' }}>
-                    <span>{ing.name}</span>
+                    <span>{ing.name}{ing.edited && ' (substituted)'}</span>
                     <span style={{ color: 'var(--accent-green)', fontWeight: '700' }}>{ing.quantity}</span>
                   </div>
                 ))}
@@ -501,6 +520,13 @@ const LiveCooking = () => {
       <DeboningModal 
         isOpen={isDeboneModalOpen} 
         onClose={() => setIsDeboneModalOpen(false)} 
+      />
+
+      <SubstituteModal
+        isOpen={isSubstituteModalOpen}
+        onClose={() => setIsSubstituteModalOpen(false)}
+        ingredients={stepIngredients}
+        onSubstitute={handleSubstitute}
       />
     </div>
   );
