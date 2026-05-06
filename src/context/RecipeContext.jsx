@@ -89,17 +89,23 @@ export const RecipeProvider = ({ children }) => {
   }, [testingMode]);
 
   const setActiveRecipeById = (recipeId, forceReset = false) => {
+    // Mapping for old IDs to prevent blank pages on mobile with cached data
+    const idMapping = {
+      'lebanese-spicy-chicken': 'authentic-lebanese-chicken'
+    };
+    const effectiveId = idMapping[recipeId] || recipeId;
+
     // If not forcing a reset and already have the right recipe, skip update
-    if (!forceReset && activeRecipe && activeRecipe.id === recipeId) {
+    if (!forceReset && activeRecipe && activeRecipe.id === effectiveId) {
       return;
     }
 
     // 1. Try initial recipes
-    let recipe = initialRecipes[recipeId];
+    let recipe = initialRecipes[effectiveId];
     
     // 2. Try saved recipes if not found
     if (!recipe) {
-      recipe = savedRecipes.find(r => r.id.toString() === recipeId.toString());
+      recipe = savedRecipes.find(r => r.id.toString() === effectiveId.toString());
     }
 
     if (recipe) {
