@@ -7,7 +7,7 @@ import { useRecipes } from '../context/RecipeContext';
 
 const Home = () => {
   const navigate = useNavigate();
-  const { savedRecipes, recentRecipes, recipeProgress, deleteRecent } = useRecipes();
+  const { savedRecipes, recentRecipes, recipeProgress, deleteRecent, setActiveRecipeById } = useRecipes();
   const [deletingId, setDeletingId] = useState(null);
   const longPressTimerRef = useRef(null);
 
@@ -74,8 +74,10 @@ const Home = () => {
                       return;
                     }
                     if (recipe.id === 'authentic-lebanese-chicken') {
+                      // Ensure the active recipe is loaded into context before navigating
+                      setActiveRecipeById(recipe.id);
                       if (hasProgress) {
-                        navigate('/live-cooking');
+                        navigate('/live-cooking', { state: { recipeId: recipe.id } });
                       } else {
                         navigate(`/recipe/${recipe.id}`, { state: { from: 'recent' } });
                       }
