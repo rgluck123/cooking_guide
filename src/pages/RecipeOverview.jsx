@@ -89,10 +89,9 @@ const RecipeOverview = () => {
   if (!activeRecipe) return null;
 
   const currentPortions = parseInt(activeRecipe.portions) || 2;
-  const recipeBookId = 'authentic-lebanese-chicken';
-  const savedRecipeInstance = savedRecipes.find((recipe) => recipe.id === recipeBookId);
-  const isSavedToRecipeBook = !!savedRecipeInstance;
-  const hasSavedModifications = isSavedToRecipeBook && savedRecipeInstance.modifications && savedRecipeInstance.modifications.length > 0;
+  const isSavedToRecipeBook = savedRecipes.some(r => r.id === activeRecipe.id || r.baseRecipeId === activeRecipe.id || r.id === 'authentic-lebanese-chicken');
+  const savedRecipeInstance = savedRecipes.find(r => r.id === activeRecipe.id) || savedRecipes.find(r => r.baseRecipeId === activeRecipe.id) || savedRecipes.find(r => r.id === 'authentic-lebanese-chicken');
+  const hasSavedModifications = activeRecipe.isModified || (isSavedToRecipeBook && savedRecipeInstance?.modifications?.length > 0);
 
   const handleToggleSelect = (id) => {
     setSelectedIngredientIds(prev => 

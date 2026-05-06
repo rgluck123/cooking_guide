@@ -113,7 +113,8 @@ const RecipeCard = ({ title, time, image, isBookLink = false, progress, isModifi
             display: 'flex',
             alignItems: 'center',
             gap: '3px',
-            opacity: 0.7
+            opacity: 1.0,
+            border: '1px solid rgba(0, 0, 0, 0.1)',
           }}>
             <Pencil size={9} />
             CUSTOMIZED

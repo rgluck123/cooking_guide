@@ -257,10 +257,10 @@ const LiveCooking = () => {
       else if (/(modify|do modification|put modification)/i.test(transcript)) {
         setIsModifyModalOpen(true);
       }
-      else if (/(start|launch|set|resume|continue|restart) (the )?timer|start (the )?countdown/i.test(transcript)) {
+      else if (/(start|launch|set|resume|continue|unpause) (the )?(timer|time|countdown)/i.test(transcript) || /^(resume|continue|unpause)$/i.test(transcript)) {
         timerRef.current?.start();
       }
-      else if (/(pause|stop|halt) (the )?timer|pause|pause (the )?time|stop (the )?time/i.test(transcript)) {
+      else if (/(pause|stop|halt) (the )?(timer|time|countdown)/i.test(transcript) || /^(pause|stop|halt)$/i.test(transcript)) {
         timerRef.current?.pause();
       }
       else if (/(reset|restart|clear|start over) (the )?(timer|time|countdown)/i.test(transcript)) {

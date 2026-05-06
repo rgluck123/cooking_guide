@@ -71,7 +71,27 @@ const SaveRecipe = () => {
   const handleSaveRecipe = useCallback(() => {
     const activeModifications = allModifications.filter(mod => selectedModifications.has(mod.id));
     
+    const finalIngredients = [...(activeRecipe?.ingredients || [])];
+    
+    // Add modifications that are strictly additions from LiveCooking (not from overview)
+    const addedMods = activeModifications.filter(mod => !mod.isFromOverview);
+    addedMods.forEach((mod, idx) => {
+      finalIngredients.push({
+        id: `mod-${Date.now()}-${idx}`,
+        name: mod.name,
+        quantity: mod.amount || '',
+        unit: '',
+        originalName: mod.name,
+        edited: true,
+        removed: false,
+        originalPosition: 999 + idx,
+        assignedSteps: mod.stepId ? [Number(mod.stepId)] : []
+      });
+    });
+
     const recipeData = {
+      ...activeRecipe,
+      ingredients: finalIngredients,
       name: recipeName,
       image: activeRecipe?.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=80',
       time: activeRecipe?.time || '40 mins',
@@ -79,7 +99,8 @@ const SaveRecipe = () => {
       modifications: activeModifications,
       notes: notes,
       savedAt: new Date().toLocaleString(),
-      isModified: true
+      isModified: true,
+      baseRecipeId: activeRecipe?.id || 'authentic-lebanese-chicken'
     };
 
     saveRecipe(recipeData);
