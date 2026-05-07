@@ -12,8 +12,11 @@ const HorizontalScroll = ({ children, className = '', gap = '16px' }) => {
         paddingRight: '20px',
         paddingBottom: '16px',
         scrollSnapType: 'x mandatory',
-        boxSizing: 'content-box',
-        width: 'calc(100% - 40px)'
+        scrollPaddingLeft: '20px',
+        scrollPaddingRight: '20px',
+        boxSizing: 'border-box',
+        width: '100%',
+        WebkitOverflowScrolling: 'touch'
       }}
     >
       {React.Children.map(children, (child, index) => (
@@ -21,6 +24,7 @@ const HorizontalScroll = ({ children, className = '', gap = '16px' }) => {
           {child}
         </div>
       ))}
+      {/* End spacer to ensure right padding is visible when scrolled to end */}
       <div style={{ minWidth: '4px', flexShrink: 0 }} aria-hidden="true" />
     </div>
   );
