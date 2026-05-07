@@ -595,7 +595,7 @@ const LiveCooking = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '60vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <span style={{ fontSize: '14px', fontWeight: '700' }}>Navigation</span>
-              <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Next step", "Previous step", "Home page"</span>
+              <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Next step", "Previous step", "Go ahead", "Go back"</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <span style={{ fontSize: '14px', fontWeight: '700' }}>Timer</span>
@@ -610,8 +610,8 @@ const LiveCooking = () => {
               <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Help", "More instructions", "Voice help"</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <span style={{ fontSize: '14px', fontWeight: '700' }}>Settings</span>
-              <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Mute voice", "Unmute voice", "Say again"</span>
+              <span style={{ fontSize: '14px', fontWeight: '700' }}>General interaction</span>
+              <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Say again", "Close", "Mute voice", "Enable voice"</span>
             </div>
           </div>
         </div>
