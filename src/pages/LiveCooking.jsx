@@ -595,7 +595,7 @@ const LiveCooking = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '60vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <span style={{ fontSize: '14px', fontWeight: '700' }}>Navigation</span>
-              <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Next step", "Go ahead", "Previous step", "Go back"</span>
+              <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Next step", "Previous step", "Home page"</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <span style={{ fontSize: '14px', fontWeight: '700' }}>Timer</span>
@@ -603,15 +603,15 @@ const LiveCooking = () => {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <span style={{ fontSize: '14px', fontWeight: '700' }}>Modify</span>
-              <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Modify", "Save"</span>
+              <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Modify", "Save changes", "Undo"</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <span style={{ fontSize: '14px', fontWeight: '700' }}>More Instructions</span>
+              <span style={{ fontSize: '14px', fontWeight: '700' }}>Instructions</span>
               <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Help", "More instructions", "Voice help"</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <span style={{ fontSize: '14px', fontWeight: '700' }}>General & Settings</span>
-              <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Mute voice", "Say again", "Close"</span>
+              <span style={{ fontSize: '14px', fontWeight: '700' }}>Settings</span>
+              <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Mute voice", "Unmute voice", "Say again"</span>
             </div>
           </div>
         </div>

@@ -402,7 +402,7 @@ const SaveRecipe = () => {
         </div>
 
         <p style={{ fontSize: '14px', color: 'var(--text-light)', lineHeight: '1.5', marginBottom: '24px' }}>
-          This will save a new version of the recipe with your modifications to your “<strong>My Recipe Book</strong>”.
+          This will save a new version of the recipe with your modifications to “<strong>My Recipe Book</strong>”.
         </p>
 
         <button onClick={handleSaveRecipe} style={{ width: '100%', padding: '18px 24px', backgroundColor: 'var(--accent-green)', color: 'white', border: 'none', borderRadius: '24px', fontWeight: '800', fontSize: '17px', cursor: 'pointer', fontFamily: 'var(--heading)', boxShadow: '0 4px 12px rgba(74, 107, 68, 0.2)' }}>
