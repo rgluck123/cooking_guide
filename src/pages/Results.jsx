@@ -7,11 +7,16 @@ import { useRecipes } from '../context/RecipeContext';
 const Results = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { savedRecipes } = useRecipes();
+  const { savedRecipes, setActiveRecipeById } = useRecipes();
   
   const locationState = location.state || {};
   const initialQuery = locationState.query || '';
   const [searchTerm, setSearchTerm] = useState(initialQuery);
+
+  const handleRecipeClick = (recipeId, isSavedVersion) => {
+    setActiveRecipeById(recipeId, !isSavedVersion); // Force reset if it's the base version
+    navigate(`/recipe/${recipeId}`, { state: { from: isSavedVersion ? 'saved' : 'results' } });
+  };
 
   const baseResults = [
     { id: '1', title: 'White Bean Basil Chicken Chili', time: '70', protein: 'Chicken', difficulty: 'Intermediate', cuisine: 'Mexican', image: 'https://images.unsplash.com/photo-1552611052-33e04de081de?auto=format&fit=crop&w=400&q=80' },
@@ -155,7 +160,7 @@ const Results = () => {
             isModified={r.isModified}
             onClick={() => {
               if (r.id === 'authentic-lebanese-chicken' || r.isSavedVersion) {
-                navigate(`/recipe/${r.id}`, { state: { from: r.isSavedVersion ? 'saved' : 'results' } });
+                handleRecipeClick(r.id, r.isSavedVersion);
               } else {
                 navigate('/under-construction');
               }

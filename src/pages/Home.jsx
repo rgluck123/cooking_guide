@@ -261,7 +261,10 @@ const Home = () => {
                 time={recipe.time?.toString().replace(' mins', '') || ''} 
                 image={recipe.image} 
                 isModified={recipe.modifications && recipe.modifications.length > 0}
-                onClick={() => navigate(`/recipe/${recipe.id}`)} 
+                onClick={() => {
+                  setActiveRecipeById(recipe.id);
+                  navigate(`/recipe/${recipe.id}`);
+                }} 
               />
             ))
           ) : (
