@@ -90,6 +90,7 @@ export const RecipeProvider = ({ children }) => {
 
   const setActiveRecipeById = (recipeId, forceReset = false) => {
     // Mapping for old IDs to prevent blank pages on mobile with cached data
+    // Updated for PWA navigation stability
     const idMapping = {
       'lebanese-spicy-chicken': 'authentic-lebanese-chicken'
     };
