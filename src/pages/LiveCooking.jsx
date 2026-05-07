@@ -317,7 +317,7 @@ const LiveCooking = () => {
           speakStep(`Added ${itemName}`);
         }
       }
-      else if (/(unmute|allow voice|allow speech)/i.test(transcript)) {
+      else if (/(unmute( voice)?|allow voice|allow speech|enable voice|enable speech)/i.test(transcript)) {
         setVoiceOutputEnabled(true);
       }
       else if (/(mute|turn off voice|turn off speech|disable voice|disable speech)/i.test(transcript)) {
@@ -352,7 +352,7 @@ const LiveCooking = () => {
       if (loopTimeoutRef.current) clearTimeout(loopTimeoutRef.current);
       try { recognitionRef.current?.abort(); } catch(e) { /* ignore */ }
     };
-  }, [voiceEnabled, activeRecipe, visibleSteps.length, addRecent, navigate, recipeId, speakStep, handleExit, isModifyModalOpen, isDeboneModalOpen, handleSaveModification, voiceOutputEnabled, step]); 
+  }, [voiceEnabled, activeRecipe, visibleSteps.length, addRecent, navigate, recipeId, speakStep, handleExit, isModifyModalOpen, isDeboneModalOpen, isVoiceHelpOpen, handleSaveModification, voiceOutputEnabled, step]); 
 
   const voicesLoadedRef = useRef(false);
 
@@ -587,31 +587,36 @@ const LiveCooking = () => {
       )}
 
       {isVoiceHelpOpen && (
-        <div style={{ position: 'fixed', top: '10px', left: '10px', right: '10px', zIndex: 2000, backgroundColor: 'var(--surface)', borderRadius: '20px', padding: '20px', boxShadow: '0 8px 32px rgba(0,0,0,0.15)', border: '1px solid var(--border)', animation: 'slideDown 0.3s ease-out' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '700', margin: 0, fontFamily: 'var(--heading)' }}>Voice Commands</h3>
-            <button onClick={() => setIsVoiceHelpOpen(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: 'var(--text)', padding: 0 }}>✕</button>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '60vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <span style={{ fontSize: '14px', fontWeight: '700' }}>Navigation</span>
-              <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Next step", "Previous step", "Go ahead", "Go back"</span>
+        <div 
+          onClick={() => setIsVoiceHelpOpen(false)}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.4)', zIndex: 2000, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px' }}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: '480px', backgroundColor: 'var(--surface)', borderRadius: '20px', padding: '20px', boxShadow: '0 8px 32px rgba(0,0,0,0.15)', border: '1px solid var(--border)', animation: 'slideDown 0.3s ease-out' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '700', margin: 0, fontFamily: 'var(--heading)' }}>Voice Commands</h3>
+              <button onClick={() => setIsVoiceHelpOpen(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: 'var(--text)', padding: 0 }}>✕</button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <span style={{ fontSize: '14px', fontWeight: '700' }}>Timer</span>
-              <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Start timer", "Pause timer", "Reset timer"</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <span style={{ fontSize: '14px', fontWeight: '700' }}>Modify</span>
-              <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Modify", "Save changes", "Undo"</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <span style={{ fontSize: '14px', fontWeight: '700' }}>Instructions</span>
-              <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Help", "More instructions", "Voice help"</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <span style={{ fontSize: '14px', fontWeight: '700' }}>General interaction</span>
-              <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Say again", "Close", "Mute voice", "Enable voice"</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '60vh', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '14px', fontWeight: '700' }}>Navigation</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Next step", "Previous step", "Home page"</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '14px', fontWeight: '700' }}>Timer</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Start timer", "Pause timer", "Reset timer"</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '14px', fontWeight: '700' }}>Modify</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Modify", "Save changes", "Undo"</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '14px', fontWeight: '700' }}>Instructions</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Help", "More instructions", "Voice help"</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '14px', fontWeight: '700' }}>Settings</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Mute voice", "Unmute voice", "Say again"</span>
+              </div>
             </div>
           </div>
         </div>
