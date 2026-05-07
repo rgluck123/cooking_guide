@@ -5,7 +5,7 @@ importScripts('https://storage.googleapis.com/workbox-cdn/releases/7.4.1/workbox
 
 if (workbox) {
   // Precache manifest injected by Workbox injectManifest
-  workbox.precaching.precacheAndRoute([{"revision":"8c87866c116680004390aad33f7a631a","url":"manifest.json"},{"revision":"e3625ba22f978f52ef98395de65374a8","url":"index.html"},{"revision":"3b4fcfcf393eca4d264dca4a4663bc37","url":"icons.svg"},{"revision":"7e840862161341271697daa99a40d76b","url":"favicon.svg"},{"revision":"78c1dc67cc2846b5f74216c475082664","url":"images/authentic-lebanese-chicken-steps/cook-the-rice.png"},{"revision":"5e665ce672754cd214a5201a5a220709","url":"assets/index-ZGQ431pU.css"},{"revision":"7c1d3ae37b308be7ac2d192262f86942","url":"assets/index-CcKwkq4y.js"}] || []);
+  workbox.precaching.precacheAndRoute([{"revision":"8c87866c116680004390aad33f7a631a","url":"manifest.json"},{"revision":"8e7278d454b66eb5095121540d2d1923","url":"index.html"},{"revision":"3b4fcfcf393eca4d264dca4a4663bc37","url":"icons.svg"},{"revision":"7e840862161341271697daa99a40d76b","url":"favicon.svg"},{"revision":"78c1dc67cc2846b5f74216c475082664","url":"images/authentic-lebanese-chicken-steps/cook-the-rice.png"},{"revision":"5e665ce672754cd214a5201a5a220709","url":"assets/index-ZGQ431pU.css"},{"revision":"e9fde6d4a55513cfaa224fcad2db510d","url":"assets/index-B3iTs00J.js"}] || []);
 
   // Skip waiting on install
   self.addEventListener('install', (event) => {
