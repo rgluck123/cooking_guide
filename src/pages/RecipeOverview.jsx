@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Book, ChevronLeft, Play, Info, Plus, Minus } from 'lucide-react';
+import { Book, ChevronLeft, Play, Info, Plus, Minus, Pencil } from 'lucide-react';
 import InteractiveIngredient from '../components/InteractiveIngredient';
 import SubstituteModal from '../components/SubstituteModal';
 import DeboningModal from '../components/DeboningModal';
@@ -12,7 +12,7 @@ const RecipeOverview = () => {
   const { 
     savedRecipes, saveRecipe, deleteRecipe, clearProgress, 
     activeRecipe, setActiveRecipeById, updateActiveRecipeIngredients, 
-    addActiveRecipeIngredient, scaleActiveRecipePortions 
+    addActiveRecipeIngredient, scaleActiveRecipePortions, updateActiveRecipe 
   } = useRecipes();
   
   const recipeId = id || 'authentic-lebanese-chicken';
@@ -24,10 +24,15 @@ const RecipeOverview = () => {
     // If we're coming from a "standard" entry (not from recipe book or recent), reset to default
     const isStandardEntry = location.state?.from === 'results' || location.state?.from === 'home';
     
-    if (isStandardEntry && !hasResetRef.current) {
+    // We only want to trigger the automatic reset IF we are navigating to the base recipe ID
+    // and we haven't already performed a reset in this mount cycle.
+    const isBaseRecipe = recipeId === 'authentic-lebanese-chicken';
+
+    if (isStandardEntry && isBaseRecipe && !hasResetRef.current) {
       hasResetRef.current = true;
       setActiveRecipeById(recipeId, true); // Force reset
-    } else if (!activeRecipe || activeRecipe.id !== recipeId) {
+    } else if (!activeRecipe || (activeRecipe.id !== recipeId && !activeRecipe.id.startsWith('instance-'))) {
+      // Only set by ID if we don't have an active recipe OR the current one doesn't match and isn't a custom instance
       setActiveRecipeById(recipeId);
     }
   }, [recipeId, activeRecipe, setActiveRecipeById, location.state]);
@@ -333,19 +338,44 @@ const RecipeOverview = () => {
         }} />
         <button 
           onClick={() => navigate(-1)} 
-          style={{ position: 'absolute', top: 'calc(24px + env(safe-area-inset-top))', left: '20px', width: '44px', height: '44px', background: 'rgba(255,255,255,0.88)', borderRadius: '50%', border: 'none', padding: 0, lineHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          style={{ position: 'absolute', top: 'calc(24px + env(safe-area-inset-top))', left: '20px', width: '44px', height: '44px', background: 'rgba(255,255,255,0.88)', borderRadius: '50%', border: 'none', padding: 0, zIndex: 10, lineHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
         >
           <ChevronLeft size={22} />
         </button>
         <button 
           onClick={handleSaveToRecipeBook}
-          style={{ position: 'absolute', top: 'calc(24px + env(safe-area-inset-top))', right: '20px', width: '44px', height: '44px', background: isSavedToRecipeBook ? 'var(--accent-green)' : 'rgba(255,255,255,0.88)', borderRadius: '50%', border: 'none', padding: 0, lineHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          style={{ position: 'absolute', top: 'calc(24px + env(safe-area-inset-top))', right: '20px', width: '44px', height: '44px', background: isSavedToRecipeBook ? 'var(--accent-green)' : 'rgba(255,255,255,0.88)', borderRadius: '50%', border: 'none', padding: 0, zIndex: 10, lineHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
         >
           <Book size={18} color={isSavedToRecipeBook ? 'white' : 'var(--text)'} />
         </button>
 
+        {hasSavedModifications && (
+          <div style={{
+            position: 'absolute',
+            bottom: '42px',
+            right: '24px',
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            color: 'var(--accent-green)',
+            fontSize: '11px',
+            fontWeight: '800',
+            padding: '6px 12px',
+            borderRadius: '12px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            border: '1px solid rgba(0, 0, 0, 0.1)',
+            zIndex: 10,
+            letterSpacing: '0.5px',
+            textTransform: 'uppercase',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px',
+          }}>
+            <Pencil size={11} strokeWidth={2.5} />
+            CUSTOMIZED
+          </div>
+        )}
+
         {showSavedNotice && (
-          <div style={{ position: 'absolute', top: 'calc(76px + env(safe-area-inset-top))', right: '20px', backgroundColor: 'rgba(255, 255, 255, 0.95)', color: 'var(--accent-green)', border: '1px solid rgba(74, 107, 68, 0.3)', borderRadius: '12px', padding: '8px 12px', fontSize: '12px', fontWeight: '600', boxShadow: 'var(--shadow)' }}>
+          <div style={{ position: 'absolute', top: 'calc(76px + env(safe-area-inset-top))', right: '20px', backgroundColor: 'rgba(255, 255, 255, 0.95)', color: 'var(--accent-green)', border: '1px solid rgba(74, 107, 68, 0.3)', borderRadius: '12px', padding: '8px 12px', fontSize: '12px', fontWeight: '600', boxShadow: 'var(--shadow)', zIndex: 20 }}>
             {savedNoticeText}
           </div>
         )}
@@ -362,24 +392,6 @@ const RecipeOverview = () => {
       }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '16px' }}>
           <h1 style={{ fontSize: '28px', fontWeight: '800', margin: 0, lineHeight: '1.2' }}>{activeRecipe.name}</h1>
-          {hasSavedModifications && (
-            <div style={{
-              backgroundColor: 'var(--surface)',
-              color: 'var(--accent-orange)',
-              fontSize: '11px',
-              fontWeight: '800',
-              padding: '6px 10px',
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              border: '1px solid rgba(224, 122, 95, 0.3)',
-              letterSpacing: '0.3px',
-              textTransform: 'uppercase',
-              flexShrink: 0,
-              marginTop: '4px'
-            }}>
-              Modified
-            </div>
-          )}
         </div>
         
         <div style={{ display: 'flex', gap: '16px', marginBottom: '32px', position: 'relative' }}>
