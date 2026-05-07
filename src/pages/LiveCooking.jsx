@@ -595,15 +595,19 @@ const LiveCooking = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '60vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <span style={{ fontSize: '14px', fontWeight: '700' }}>Navigation</span>
-              <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Next step", "Previous step", "Home page"</span>
+              <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Next step", "Go ahead", "Previous step", "Go back"</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <span style={{ fontSize: '14px', fontWeight: '700' }}>Timer</span>
               <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Start timer", "Pause timer", "Reset timer"</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <span style={{ fontSize: '14px', fontWeight: '700' }}>Modifications</span>
-              <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Modify", "Add [item]", "Remove [item]"</span>
+              <span style={{ fontSize: '14px', fontWeight: '700' }}>Modify</span>
+              <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Modify", "Save"</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span style={{ fontSize: '14px', fontWeight: '700' }}>More Instructions</span>
+              <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Help", "More instructions", "Voice help"</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <span style={{ fontSize: '14px', fontWeight: '700' }}>General & Settings</span>
