@@ -27,14 +27,20 @@ const Results = () => {
   ];
 
   const allResults = useMemo(() => {
-    const combined = [...baseResults];
+    // Determine which base IDs are already in savedRecipes
+    const savedBaseIds = new Set(savedRecipes.map(s => s.baseRecipeId || s.id));
+    
+    // Filter baseResults to only include those NOT in savedRecipes
+    const filteredBase = baseResults.filter(base => !savedBaseIds.has(base.id));
+    
+    const combined = [...filteredBase];
     
     // Add saved recipes with reactive metadata
     savedRecipes.forEach(saved => {
       let dynamicProtein = 'Chicken'; // default base for lebanese chicken
-      const hasModifications = saved.modifications && saved.modifications.length > 0;
+      const hasModifications = saved.isModified || (saved.modifications && saved.modifications.length > 0);
       
-      if (hasModifications) {
+      if (saved.modifications && saved.modifications.length > 0) {
          const modText = saved.modifications.map(m => m.name?.toLowerCase() || '').join(' ');
          if (modText.includes('tofu') || modText.includes('tempeh') || modText.includes('beans') || modText.includes('paneer') || modText.includes('soy')) {
            dynamicProtein = 'Vegetarian';

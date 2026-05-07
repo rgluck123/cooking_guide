@@ -99,7 +99,7 @@ const RecipeCard = ({ title, time, image, isBookLink = false, progress, isModifi
             position: 'absolute',
             bottom: '8px',
             right: '8px',
-            backgroundColor: 'rgba(255, 255, 255, 0.55)',
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
             color: 'var(--accent-green)',
             fontSize: '9px',
             fontWeight: '700',

@@ -260,7 +260,7 @@ const Home = () => {
                 title={recipe.name} 
                 time={recipe.time?.toString().replace(' mins', '') || ''} 
                 image={recipe.image} 
-                isModified={recipe.modifications && recipe.modifications.length > 0}
+                isModified={recipe.isModified || (recipe.modifications && recipe.modifications.length > 0)}
                 onClick={() => {
                   setActiveRecipeById(recipe.id);
                   navigate(`/recipe/${recipe.id}`);
