@@ -146,14 +146,19 @@ export const RecipeProvider = ({ children }) => {
     });
   };
 
-  const saveRecipe = (recipe) => {
+  const saveRecipe = (recipe, forceNewId = false) => {
+    const recipeIdToSave = forceNewId ? `instance-${Date.now()}` : (recipe.id || `instance-${Date.now()}`);
     const newRecipe = {
-      id: Date.now(),
+      ...recipe,
+      id: recipeIdToSave,
       timestamp: new Date().toISOString(),
-      ...recipe
     };
-    setSavedRecipes(prev => [newRecipe, ...prev]);
-    return newRecipe.id;
+    
+    setSavedRecipes(prev => {
+      const filtered = prev.filter(r => r.id !== recipeIdToSave);
+      return [newRecipe, ...filtered];
+    });
+    return recipeIdToSave;
   };
 
   const addRecent = (recipe) => {

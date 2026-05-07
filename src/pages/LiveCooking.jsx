@@ -257,14 +257,14 @@ const LiveCooking = () => {
       else if (/(modify|do modification|put modification)/i.test(transcript)) {
         setIsModifyModalOpen(true);
       }
-      else if (/(start|launch|set|resume|continue|unpause) (the )?(timer|time|countdown)/i.test(transcript) || /^(resume|continue|unpause)$/i.test(transcript)) {
+      else if (/\b(reset|restart|clear|start over)\b.*(timer|time|countdown)/i.test(transcript) || /^(reset|restart|clear)$/i.test(transcript)) {
+        timerRef.current?.reset();
+      }
+      else if (/\b(start|launch|set|resume|continue|unpause)\b.*(timer|time|countdown)/i.test(transcript) || /^(resume|continue|unpause)$/i.test(transcript)) {
         timerRef.current?.start();
       }
-      else if (/(pause|stop|halt) (the )?(timer|time|countdown)/i.test(transcript) || /^(pause|stop|halt)$/i.test(transcript)) {
+      else if (/\b(pause|stop|halt)\b.*(timer|time|countdown)/i.test(transcript) || /^(pause|stop|halt)$/i.test(transcript)) {
         timerRef.current?.pause();
-      }
-      else if (/(reset|restart|clear|start over) (the )?(timer|time|countdown)/i.test(transcript)) {
-        timerRef.current?.reset();
       }
       else if (/(help|more info|more information|more instructions)/i.test(transcript)) {
         if (step?.id === 2) setIsDeboneModalOpen(true);

@@ -96,13 +96,15 @@ const RecipeBook = () => {
             {savedRecipes.map((recipe) => (
               <div
                 key={recipe.id}
+                onClick={() => navigate(`/recipe/${recipe.id}`)}
                 style={{
                   backgroundColor: 'var(--surface)',
                   borderRadius: '12px',
                   border: '1px solid var(--border)',
                   overflow: 'hidden',
                   display: 'flex',
-                  height: '120px'
+                  height: '120px',
+                  cursor: 'pointer'
                 }}
               >
                 {/* Recipe Image */}
@@ -161,7 +163,10 @@ const RecipeBook = () => {
 
                 {/* Delete Button */}
                 <button
-                  onClick={() => setDeleteConfirm(recipe.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteConfirm(recipe.id);
+                  }}
                   style={{
                     background: 'none',
                     border: 'none',

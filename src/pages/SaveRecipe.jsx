@@ -71,6 +71,14 @@ const SaveRecipe = () => {
   const handleSaveRecipe = useCallback(() => {
     const activeModifications = allModifications.filter(mod => selectedModifications.has(mod.id));
     
+    const isNameChanged = recipeName.trim() !== activeRecipe?.name;
+    const hasModifications = activeModifications.length > 0;
+    const hasNotes = notes.trim() !== '';
+
+    // If the name is changed, or there are modifications, or there are notes, create a new instance.
+    // Otherwise, just save the base recipe (or overwrite the current instance).
+    const needsNewInstance = isNameChanged || hasModifications || hasNotes;
+
     const finalIngredients = [...(activeRecipe?.ingredients || [])];
     
     // Add modifications that are strictly additions from LiveCooking (not from overview)
@@ -99,11 +107,11 @@ const SaveRecipe = () => {
       modifications: activeModifications,
       notes: notes,
       savedAt: new Date().toLocaleString(),
-      isModified: true,
+      isModified: needsNewInstance,
       baseRecipeId: activeRecipe?.id || 'authentic-lebanese-chicken'
     };
 
-    saveRecipe(recipeData);
+    saveRecipe(recipeData, needsNewInstance);
     
     // Clear the cooking progress ONLY on successful save
     clearProgress(recipeId);

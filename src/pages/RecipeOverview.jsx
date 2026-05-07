@@ -252,16 +252,13 @@ const RecipeOverview = () => {
 
   const handleSaveToRecipeBook = () => {
     if (isSavedToRecipeBook) {
-      deleteRecipe(recipeBookId);
+      deleteRecipe(savedRecipeInstance?.id || activeRecipe.id);
       setSavedNoticeText('Removed from my recipe book');
     } else {
       saveRecipe({
-        id: recipeBookId,
-        name: 'Authentic Lebanese Chicken with Rice',
-        image: 'https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?auto=format&fit=crop&w=800&q=80',
-        time: '40 mins',
-        difficulty: 'Intermediate',
-        portions: activeRecipe.portions
+        ...activeRecipe,
+        id: activeRecipe.id,
+        baseRecipeId: activeRecipe.id,
       });
       setSavedNoticeText('Saved to my recipe book');
     }
@@ -355,7 +352,7 @@ const RecipeOverview = () => {
         padding: '32px 24px'
       }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '16px' }}>
-          <h1 style={{ fontSize: '28px', fontWeight: '800', margin: 0, lineHeight: '1.2' }}>Authentic Lebanese Chicken with Rice</h1>
+          <h1 style={{ fontSize: '28px', fontWeight: '800', margin: 0, lineHeight: '1.2' }}>{activeRecipe.name}</h1>
           {hasSavedModifications && (
             <div style={{
               backgroundColor: 'var(--surface)',
