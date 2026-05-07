@@ -66,8 +66,7 @@ const SubstituteModal = ({ isOpen, onClose, ingredients, onSubstitute, cookingSt
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'flex-end',
-      maxWidth: '480px',
-      margin: '0 auto'
+      alignItems: 'center'
     }}>
       <div style={{
         backgroundColor: 'var(--bg)',
@@ -76,7 +75,10 @@ const SubstituteModal = ({ isOpen, onClose, ingredients, onSubstitute, cookingSt
         padding: '24px',
         boxShadow: '0 -10px 40px rgba(0,0,0,0.2)',
         maxHeight: '80vh',
-        overflowY: 'auto'
+        overflowY: 'auto',
+        width: '100%',
+        maxWidth: '480px',
+        boxSizing: 'border-box'
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
           <h2 style={{ fontSize: '20px', margin: 0 }}>Substitute {displayTitle}</h2>
@@ -137,14 +139,14 @@ const SubstituteModal = ({ isOpen, onClose, ingredients, onSubstitute, cookingSt
               placeholder="Ingredient name" 
               value={customName}
               onChange={(e) => setCustomName(e.target.value)}
-              style={{ flex: 2, padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', fontFamily: 'var(--sans)' }}
+              style={{ flex: 2, padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', fontFamily: 'var(--sans)', boxSizing: 'border-box', minWidth: 0 }}
             />
             <input 
               type="text" 
               placeholder="Qty" 
               value={customQty}
               onChange={(e) => setCustomQty(e.target.value)}
-              style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', fontFamily: 'var(--sans)' }}
+              style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', fontFamily: 'var(--sans)', boxSizing: 'border-box', minWidth: 0 }}
             />
           </div>
           <button 

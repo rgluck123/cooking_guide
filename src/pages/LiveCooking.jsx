@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Mic, MicOff, Pencil, Volume2, VolumeX, Info } from 'lucide-react';
+import { Home, Mic, MicOff, Pencil, Volume2, VolumeX, Info, HelpCircle } from 'lucide-react';
 import { useRecipes } from '../context/RecipeContext';
 import CookingTimer from '../components/CookingTimer';
 import DeboningModal from '../components/DeboningModal';
@@ -26,6 +26,7 @@ const LiveCooking = () => {
 
   const [isModifyModalOpen, setIsModifyModalOpen] = useState(false);
   const [isDeboneModalOpen, setIsDeboneModalOpen] = useState(false);
+  const [isVoiceHelpOpen, setIsVoiceHelpOpen] = useState(false);
   const [isSubstituteModalOpen, setIsSubstituteModalOpen] = useState(false);
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [modifications, setModifications] = useState([]);
@@ -180,6 +181,14 @@ const LiveCooking = () => {
       }
     };
 
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        setVoiceEnabled(false);
+        setVoiceSupported(false);
+      }
+    };
+
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript.toLowerCase().trim();
       
@@ -205,9 +214,10 @@ const LiveCooking = () => {
         }
       }
 
-      if (isDeboneModalOpen) {
+      if (isDeboneModalOpen || isVoiceHelpOpen) {
         if (/(close|dismiss|go back|back|done|ok)/i.test(transcript)) {
           setIsDeboneModalOpen(false);
+          setIsVoiceHelpOpen(false);
           return;
         }
       }
@@ -235,6 +245,11 @@ const LiveCooking = () => {
         return;
       }
 
+      if (/(voice help|what can i say)/i.test(transcript)) {
+        setIsVoiceHelpOpen(true);
+        return;
+      }
+
       if (/(next step|next|done|ok done|go ahead|next screen|go further|i am ready|all done|finish)/i.test(transcript)) {
         if (currentStepIndexRef.current === visibleSteps.length - 1) {
           setShowSavePrompt(true);
@@ -243,9 +258,10 @@ const LiveCooking = () => {
         }
       }
       else if (/(previous step|previous|back|go back|last step|last screen)/i.test(transcript)) {
-        if (isModifyModalOpen || isDeboneModalOpen || showSavePromptRef.current) {
+        if (isModifyModalOpen || isDeboneModalOpen || isVoiceHelpOpen || showSavePromptRef.current) {
           setIsModifyModalOpen(false);
           setIsDeboneModalOpen(false);
+          setIsVoiceHelpOpen(false);
           setShowSavePrompt(false);
         } else if (currentStepIndexRef.current > 0) {
           setCurrentStepIndex(prev => prev - 1);
@@ -275,6 +291,7 @@ const LiveCooking = () => {
       else if (/(close|go to recipe|go to step)/i.test(transcript)) {
         setIsModifyModalOpen(false);
         setIsDeboneModalOpen(false);
+        setIsVoiceHelpOpen(false);
         setShowSavePrompt(false);
       }
       else if (transcript.startsWith('add ') || transcript.startsWith('include ') || transcript.startsWith('remove ')) {
@@ -384,18 +401,7 @@ const LiveCooking = () => {
     }
   }, [showSavePrompt, speakStep]);
 
-  const toggleVoiceListening = async () => {
-    if (!voiceEnabled) {
-      // Request permission if enabling
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(track => track.stop());
-      } catch (err) {
-        console.error("Microphone permission denied", err);
-        return;
-      }
-    }
-
+  const toggleVoiceListening = () => {
     setVoiceEnabled(prev => !prev);
   };
 
@@ -405,11 +411,11 @@ const LiveCooking = () => {
     <div 
       style={{ height: '100dvh', backgroundColor: 'var(--bg)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
       onTouchStart={(e) => { 
-        if (isModifyModalOpen || isDeboneModalOpen || showSavePrompt) return;
+        if (isModifyModalOpen || isDeboneModalOpen || isVoiceHelpOpen || showSavePrompt) return;
         touchStartX.current = e.touches[0].clientX; 
       }}
       onTouchEnd={(e) => {
-        if (isModifyModalOpen || isDeboneModalOpen || showSavePrompt) return;
+        if (isModifyModalOpen || isDeboneModalOpen || isVoiceHelpOpen || showSavePrompt) return;
         const touchEndX = e.changedTouches[0].clientX;
         const diffX = touchStartX.current - touchEndX;
         if (diffX > 50) nextStep();
@@ -418,9 +424,14 @@ const LiveCooking = () => {
     >
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
         <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: 'calc(20px + env(safe-area-inset-top)) 20px 12px', gap: '12px' }}>
-          <button onClick={handleExit} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '50%', padding: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: 'var(--shadow)', flexShrink: 0 }}>
-            <Home size={24} color="var(--text)" />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <button onClick={handleExit} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '50%', padding: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: 'var(--shadow)', flexShrink: 0 }}>
+              <Home size={24} color="var(--text)" />
+            </button>
+            <button onClick={() => setIsVoiceHelpOpen(true)} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: 'var(--shadow)', flexShrink: 0 }}>
+              <HelpCircle size={20} color="var(--text)" />
+            </button>
+          </div>
 
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginLeft: 'auto' }}>
             <button
@@ -574,6 +585,40 @@ const LiveCooking = () => {
           </div>
         </div>
       )}
+
+      {isVoiceHelpOpen && (
+        <div style={{ position: 'fixed', top: '10px', left: '10px', right: '10px', zIndex: 2000, backgroundColor: 'var(--surface)', borderRadius: '20px', padding: '20px', boxShadow: '0 8px 32px rgba(0,0,0,0.15)', border: '1px solid var(--border)', animation: 'slideDown 0.3s ease-out' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '700', margin: 0, fontFamily: 'var(--heading)' }}>Voice Commands</h3>
+            <button onClick={() => setIsVoiceHelpOpen(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: 'var(--text)', padding: 0 }}>✕</button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '60vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span style={{ fontSize: '14px', fontWeight: '700' }}>Navigation</span>
+              <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Next step", "Previous step", "Home page"</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span style={{ fontSize: '14px', fontWeight: '700' }}>Timer</span>
+              <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Start timer", "Pause timer", "Reset timer"</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span style={{ fontSize: '14px', fontWeight: '700' }}>Modifications</span>
+              <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Modify", "Add [item]", "Remove [item]"</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span style={{ fontSize: '14px', fontWeight: '700' }}>General & Settings</span>
+              <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Mute voice", "Say again", "Close"</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
 
       <DeboningModal 
         isOpen={isDeboneModalOpen} 

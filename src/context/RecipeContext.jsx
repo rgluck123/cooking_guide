@@ -113,13 +113,21 @@ export const RecipeProvider = ({ children }) => {
     }
   };
 
+  const forkIfBase = (recipe) => {
+    if (!recipe) return null;
+    if (recipe.id === 'authentic-lebanese-chicken' || recipe.id === recipe.baseRecipeId) {
+      return { ...recipe, id: `instance-${Date.now()}`, baseRecipeId: recipe.id || 'authentic-lebanese-chicken', isModified: true };
+    }
+    return { ...recipe, isModified: true };
+  };
+
   const updateActiveRecipeIngredients = (newIngredients) => {
-    setActiveRecipe(prev => prev ? { ...prev, ingredients: newIngredients } : null);
+    setActiveRecipe(prev => prev ? { ...forkIfBase(prev), ingredients: newIngredients } : null);
   };
 
   const addActiveRecipeIngredient = (ingredient) => {
     setActiveRecipe(prev => prev ? { 
-      ...prev, 
+      ...forkIfBase(prev), 
       ingredients: [...prev.ingredients, ingredient] 
     } : null);
   };
@@ -131,7 +139,8 @@ export const RecipeProvider = ({ children }) => {
   const scaleActiveRecipePortions = (newPortions) => {
     setActiveRecipe(prev => {
       if (!prev) return null;
-      const scaledIngredients = prev.ingredients.map(ing => {
+      const forked = forkIfBase(prev);
+      const scaledIngredients = forked.ingredients.map(ing => {
         if (ing.baseQuantity === 0 || isNaN(Number(ing.baseQuantity))) return ing;
         const newQty = (ing.baseQuantity * newPortions);
         // Format nicely: remove .0, keep 1 decimal if needed
@@ -139,7 +148,7 @@ export const RecipeProvider = ({ children }) => {
         return { ...ing, quantity: `${formattedQty}${ing.unit ? (ing.unit.length > 1 ? ' ' + ing.unit : ing.unit) : ''}` };
       });
       return { 
-        ...prev, 
+        ...forked, 
         portions: `${newPortions} Portions`,
         ingredients: scaledIngredients 
       };

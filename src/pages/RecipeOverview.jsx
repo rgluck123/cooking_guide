@@ -255,11 +255,20 @@ const RecipeOverview = () => {
       deleteRecipe(savedRecipeInstance?.id || activeRecipe.id);
       setSavedNoticeText('Removed from my recipe book');
     } else {
+      const newId = (activeRecipe.id === 'authentic-lebanese-chicken' || activeRecipe.id === activeRecipe.baseRecipeId) 
+        ? `instance-${Date.now()}` 
+        : activeRecipe.id;
+
       saveRecipe({
         ...activeRecipe,
-        id: activeRecipe.id,
-        baseRecipeId: activeRecipe.id,
+        id: newId,
+        baseRecipeId: activeRecipe.baseRecipeId || activeRecipe.id,
       });
+      
+      if (newId !== activeRecipe.id) {
+        updateActiveRecipe({ id: newId, baseRecipeId: activeRecipe.baseRecipeId || activeRecipe.id });
+      }
+      
       setSavedNoticeText('Saved to my recipe book');
     }
 
