@@ -349,26 +349,9 @@ const LiveCooking = () => {
 
     recognitionRef.current = recognition;
     
-    const startRecognitionFlow = async () => {
-      if (!voiceEnabled) return;
-      
-      try {
-        // Explicitly request microphone access to force the permission prompt on Android Chrome PWAs
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          stream.getTracks().forEach(track => track.stop());
-        }
-        
-        if (recognitionRef.current && voiceEnabled) {
-          try { recognitionRef.current.start(); } catch(e) { /* ignore */ }
-        }
-      } catch (err) {
-        console.error('Microphone permission denied or error:', err);
-        setVoiceEnabled(false);
-      }
-    };
-
-    startRecognitionFlow();
+    if (voiceEnabled) {
+      try { recognition.start(); } catch(e) { /* ignore */ }
+    }
 
     return () => {
       if (loopTimeoutRef.current) clearTimeout(loopTimeoutRef.current);
@@ -631,7 +614,7 @@ const LiveCooking = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '60vh', overflowY: 'auto' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <span style={{ fontSize: '14px', fontWeight: '700' }}>Navigation</span>
-                <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Next step", "Previous step", "Home page"</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Next step", "Previous step", "Go ahead", "Go back"</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <span style={{ fontSize: '14px', fontWeight: '700' }}>Timer</span>
@@ -646,10 +629,9 @@ const LiveCooking = () => {
                 <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Help", "More instructions", "Voice help"</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <span style={{ fontSize: '14px', fontWeight: '700' }}>Settings</span>
-                <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Mute voice", "Unmute voice", "Say again"</span>
-              </div>
-            </div>
+                <span style={{ fontSize: '14px', fontWeight: '700' }}>General interaction</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Mute voice", "Enable voice", "Say again"</span>
+              </div>            </div>
           </div>
         </div>
       )}

@@ -77,13 +77,18 @@ const Home = () => {
                       // Ensure the active recipe is loaded into context before navigating
                       setActiveRecipeById(recipe.id);
                       if (hasProgress) {
-                        try {
-                          if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                            stream.getTracks().forEach(track => track.stop());
+                        // Explicitly request microphone access ONLY on Android
+                        // This fixes the missing prompt on Android Chrome PWAs without breaking Safari
+                        const isAndroid = /Android/i.test(navigator.userAgent);
+                        if (isAndroid) {
+                          try {
+                            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                              const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                              stream.getTracks().forEach(track => track.stop());
+                            }
+                          } catch (e) {
+                            console.log("Mic permission interaction handled", e);
                           }
-                        } catch (e) {
-                          console.log("Mic permission denied or ignored", e);
                         }
                         navigate('/live-cooking', { state: { recipeId: recipe.id } });
                       } else {

@@ -614,16 +614,19 @@ const RecipeOverview = () => {
       }}>
         <button 
           onClick={async () => {
-            // Explicitly request microphone access during this user gesture
-            // This is the most reliable way to trigger the prompt on Android Chrome
-            try {
-              if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                // We stop it immediately, we just needed the permission prompt to trigger
-                stream.getTracks().forEach(track => track.stop());
+            // Explicitly request microphone access during this user gesture ONLY on Android
+            // This fixes the missing prompt on Android Chrome PWAs without breaking Safari
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            if (isAndroid) {
+              try {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                  // We stop it immediately, we just needed the permission prompt to trigger
+                  stream.getTracks().forEach(track => track.stop());
+                }
+              } catch (err) {
+                console.log("Microphone permission interaction handled", err);
               }
-            } catch (err) {
-              console.log("Microphone permission interaction handled", err);
             }
 
             // Prime speech synthesis for Safari/Mobile
