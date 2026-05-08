@@ -127,16 +127,24 @@ const LiveCooking = () => {
   };
   const prevStep = () => !isFirstStep && setCurrentStepIndex(prev => prev - 1);
 
+  const isFirstSpeakDoneRef = useRef(false);
+
   const speakStep = useCallback((customText) => {
     if (!voiceSupported || !voiceOutputEnabled || (!step && !customText)) return;
     
+    const voices = window.speechSynthesis.getVoices();
+    // If voices aren't loaded yet, wait and retry
+    if (voices.length === 0) {
+      setTimeout(() => speakStep(customText), 300);
+      return;
+    }
+
     try { window.speechSynthesis.cancel(); } catch(e) { /* ignore */ }
     
     const textToSpeak = customText || step.instruction;
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
     
-    // Explicitly find an English voice to avoid system default (e.g. Polish)
-    const voices = window.speechSynthesis.getVoices();
+    // Explicitly find an English voice
     const englishVoice = voices.find(v => v.lang.startsWith('en')) || voices.find(v => v.lang.includes('en'));
     if (englishVoice) {
       utterance.voice = englishVoice;
@@ -146,7 +154,9 @@ const LiveCooking = () => {
     utterance.rate = 0.95;
     utterance.pitch = 1;
     utterance.volume = 1;
+    
     window.speechSynthesis.speak(utterance);
+    if (!customText) isFirstSpeakDoneRef.current = true;
   }, [voiceSupported, voiceOutputEnabled, step]);
 
   const currentStepIndexRef = useRef(currentStepIndex);
@@ -366,8 +376,10 @@ const LiveCooking = () => {
       const voices = window.speechSynthesis.getVoices();
       if (voices.length > 0 && !voicesLoadedRef.current) {
         voicesLoadedRef.current = true;
-        // If we are on the first step and haven't spoken yet, trigger it
-        if (step) speakStep();
+        // If we haven't spoken yet and are on the first step, trigger it
+        if (step && !isFirstSpeakDoneRef.current) {
+          speakStep();
+        }
       }
     };
 
@@ -375,7 +387,6 @@ const LiveCooking = () => {
       window.speechSynthesis.onvoiceschanged = handleVoicesChanged;
     }
     
-    // Call it once immediately in case voices are already there
     handleVoicesChanged();
 
     return () => {
@@ -387,18 +398,23 @@ const LiveCooking = () => {
 
   // Speak the step whenever it changes
   useEffect(() => {
-    if (!step) return;
+    if (!activeRecipe || !step) return;
     
-    // We use a short timeout to ensure UI is rendered and voices are ready
+    // Use a slightly longer timeout on mount to allow browser to resume after mic prompt
+    const isFirstLoad = !isFirstSpeakDoneRef.current;
     const timer = setTimeout(() => {
-      speakStep();
-    }, 400);
+      if (isFirstLoad) {
+        if (!isFirstSpeakDoneRef.current) speakStep();
+      } else {
+        speakStep();
+      }
+    }, isFirstLoad ? 1000 : 400);
     
     return () => {
       clearTimeout(timer);
       try { window.speechSynthesis.cancel(); } catch(e) { /* ignore */ }
     };
-  }, [step?.id, speakStep]);
+  }, [step?.id, activeRecipe, speakStep]);
 
   useEffect(() => {
     if (showSavePrompt) {
