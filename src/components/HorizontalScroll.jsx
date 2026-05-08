@@ -8,7 +8,7 @@ const HorizontalScroll = ({ children, className = '', gap = '16px' }) => {
         display: 'flex',
         overflowX: 'auto',
         gap: gap,
-        paddingLeft: '20px',
+        paddingLeft: '12px',
         paddingRight: '20px',
         paddingBottom: '16px',
         scrollSnapType: 'x mandatory',

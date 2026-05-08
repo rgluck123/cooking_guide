@@ -23,7 +23,13 @@ const Results = () => {
     { id: '2', title: 'Veggie & Rice Stir-Fry', time: '65', protein: 'Vegetarian', difficulty: 'Beginner', cuisine: 'Japanese', image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=400&q=80' },
     { id: 'authentic-lebanese-chicken', title: 'Authentic Lebanese Chicken with Rice', time: '40', protein: 'Chicken', difficulty: 'Intermediate', cuisine: 'Lebanese', image: 'https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?auto=format&fit=crop&w=400&q=80' },
     { id: '3', title: 'Turkey Tacos', time: '45', protein: 'Chicken', difficulty: 'Beginner', cuisine: 'Mexican', image: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=400&q=80' },
-    { id: '4', title: 'Lebanese Fattoush Salad', time: '20', protein: 'Vegetarian', difficulty: 'Beginner', cuisine: 'Lebanese', image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=400&q=80' }
+    { id: '4', title: 'Lebanese Fattoush Salad', time: '20', protein: 'Vegetarian', difficulty: 'Beginner', cuisine: 'Lebanese', image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=400&q=80' },
+    { id: '5', title: 'Lebanese Hummus & Pita', time: '15', protein: 'Vegetarian', difficulty: 'Beginner', cuisine: 'Lebanese', image: 'https://images.unsplash.com/photo-1577348981446-24e52bfaf10c?auto=format&fit=crop&w=400&q=80' },
+    { id: '6', title: 'Lebanese Falafel Wrap', time: '30', protein: 'Vegetarian', difficulty: 'Intermediate', cuisine: 'Lebanese', image: 'https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?auto=format&fit=crop&w=400&q=80' },
+    { id: '7', title: 'Spicy Ramen Bowl', time: '25', protein: 'Pork', difficulty: 'Beginner', cuisine: 'Japanese', image: 'https://images.unsplash.com/photo-1557872943-16a5ac26437e?auto=format&fit=crop&w=400&q=80' },
+    { id: '8', title: 'Mushroom Risotto', time: '45', protein: 'Vegetarian', difficulty: 'Advanced', cuisine: 'Italian', image: 'https://images.unsplash.com/photo-1476124369491-e7addf5db371?auto=format&fit=crop&w=400&q=80' },
+    { id: '9', title: 'Beef Burrito Bowl', time: '20', protein: 'Cow', difficulty: 'Beginner', cuisine: 'Mexican', image: 'https://images.unsplash.com/photo-1543339308-43e59d6b73a6?auto=format&fit=crop&w=400&q=80' },
+    { id: '10', title: 'Chicken Tikka Masala', time: '50', protein: 'Chicken', difficulty: 'Intermediate', cuisine: 'Indian', image: 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&w=400&q=80' }
   ];
 
   const allResults = useMemo(() => {
@@ -165,7 +171,7 @@ const Results = () => {
             image={r.image} 
             isModified={r.isModified}
             onClick={() => {
-              if (r.id === 'authentic-lebanese-chicken' || r.isSavedVersion) {
+              if (r.cuisine === 'Lebanese' || r.isSavedVersion) {
                 handleRecipeClick(r.id, r.isSavedVersion);
               } else {
                 navigate('/under-construction');

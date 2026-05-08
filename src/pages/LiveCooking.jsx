@@ -38,6 +38,7 @@ const LiveCooking = () => {
   const timerRef = useRef(null);
   const loopTimeoutRef = useRef(null);
   const touchStartX = useRef(0);
+  const hasRequestedMicRef = useRef(false);
 
   const allVisibleSteps = useMemo(() => {
     return activeRecipe?.steps.filter(step => {
@@ -327,6 +328,9 @@ const LiveCooking = () => {
       else if (/(again|say again|speak again)/i.test(transcript)) {
         speakStep();
       }
+      else if (/(skip voice)/i.test(transcript)) {
+        try { window.speechSynthesis.cancel(); } catch(e) { /* ignore */ }
+      }
       else if (/(yes|sure|save it|save recipe)/i.test(transcript)) {
         if (showSavePromptRef.current || /save recipe/i.test(transcript)) {
           // ...
@@ -344,9 +348,27 @@ const LiveCooking = () => {
     };
 
     recognitionRef.current = recognition;
-    if (voiceEnabled) {
-      try { recognition.start(); } catch(e) { /* ignore */ }
-    }
+    
+    const startRecognitionFlow = async () => {
+      if (!voiceEnabled) return;
+      
+      try {
+        // Explicitly request microphone access to force the permission prompt on Android Chrome PWAs
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          stream.getTracks().forEach(track => track.stop());
+        }
+        
+        if (recognitionRef.current && voiceEnabled) {
+          try { recognitionRef.current.start(); } catch(e) { /* ignore */ }
+        }
+      } catch (err) {
+        console.error('Microphone permission denied or error:', err);
+        setVoiceEnabled(false);
+      }
+    };
+
+    startRecognitionFlow();
 
     return () => {
       if (loopTimeoutRef.current) clearTimeout(loopTimeoutRef.current);
@@ -401,7 +423,17 @@ const LiveCooking = () => {
     }
   }, [showSavePrompt, speakStep]);
 
-  const toggleVoiceListening = () => {
+  const toggleVoiceListening = async () => {
+    if (!voiceEnabled) {
+      try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          stream.getTracks().forEach(track => track.stop());
+        }
+      } catch (err) {
+        console.error("Microphone permission denied or ignored", err);
+      }
+    }
     setVoiceEnabled(prev => !prev);
   };
 

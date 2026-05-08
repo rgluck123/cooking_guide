@@ -613,13 +613,24 @@ const RecipeOverview = () => {
         zIndex: 50
       }}>
         <button 
-          onClick={() => {
+          onClick={async () => {
             // Prime speech synthesis for Safari/Mobile
             try {
               const silent = new SpeechSynthesisUtterance("");
               silent.volume = 0;
               window.speechSynthesis.speak(silent);
             } catch(e) {}
+            
+            // Explicitly request microphone access during this user gesture
+            // This fixes the issue on Android Chrome PWAs where auto-prompting fails
+            try {
+              if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(track => track.stop());
+              }
+            } catch (err) {
+              console.log("Microphone permission skipped or denied", err);
+            }
             
             clearProgress(activeRecipe.id);
             navigate('/live-cooking', { state: { recipeId: activeRecipe.id } });

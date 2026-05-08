@@ -68,7 +68,7 @@ const Home = () => {
                   time={recipe.time?.toString().replace(' mins', '') || ''} 
                   image={recipe.image} 
                   progress={percent}
-                  onClick={() => {
+                  onClick={async () => {
                     if (isDeleting) {
                       setDeletingId(null);
                       return;
@@ -77,6 +77,14 @@ const Home = () => {
                       // Ensure the active recipe is loaded into context before navigating
                       setActiveRecipeById(recipe.id);
                       if (hasProgress) {
+                        try {
+                          if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                            stream.getTracks().forEach(track => track.stop());
+                          }
+                        } catch (e) {
+                          console.log("Mic permission denied or ignored", e);
+                        }
                         navigate('/live-cooking', { state: { recipeId: recipe.id } });
                       } else {
                         navigate(`/recipe/${recipe.id}`, { state: { from: 'recent' } });
