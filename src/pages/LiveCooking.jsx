@@ -345,11 +345,11 @@ const LiveCooking = () => {
         if (showSavePromptRef.current || /save recipe/i.test(transcript)) {
           // ...
           addRecent({
-            id: 'authentic-lebanese-chicken',
-            name: 'Authentic Lebanese Chicken with Rice',
-            image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=80',
-            time: '40 mins',
-            portions: '2 portions'
+            id: activeRecipe.id,
+            name: activeRecipe.name,
+            image: activeRecipe.image,
+            time: activeRecipe.time || '40 mins',
+            portions: activeRecipe.portions || '2 portions'
           });
           setShowSavePrompt(false);
           navigate('/save-recipe', { state: { modifications: modificationsRef.current } });
@@ -605,7 +605,13 @@ const LiveCooking = () => {
               <button 
                 onClick={() => {
                   // Do NOT clear progress here. We want to be able to navigate back exactly.
-                  addRecent({ id: 'authentic-lebanese-chicken', name: 'Authentic Lebanese Chicken with Rice', image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=80', time: '40 mins', portions: '2 portions' });
+                  addRecent({
+                    id: activeRecipe.id,
+                    name: activeRecipe.name,
+                    image: activeRecipe.image,
+                    time: activeRecipe.time || '40 mins',
+                    portions: activeRecipe.portions || '2 portions'
+                  });
                   setShowSavePrompt(false);
                   navigate('/save-recipe', { state: { modifications: modificationsRef.current } });
                 }} 

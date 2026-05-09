@@ -67,7 +67,7 @@ export const initialRecipes = {
         id: 7,
         title: "Add the chicken",
         instruction: "Push the onions to the side and place your shredded chicken in the pan. Stir to combine.",
-        image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=80",
+        image: "https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?auto=format&fit=crop&w=400&q=80",
         hasTimer: false
       },
       {
