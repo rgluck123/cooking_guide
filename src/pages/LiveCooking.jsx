@@ -537,7 +537,7 @@ const LiveCooking = () => {
           )}
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
-            {step?.id === 2 && (
+            {step?.id === 2 && (activeRecipe.id === 'authentic-lebanese-chicken' || activeRecipe.baseRecipeId === 'authentic-lebanese-chicken') && (
               <button onClick={() => setIsDeboneModalOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 20px', borderRadius: '999px', backgroundColor: 'white', border: '1.5px solid var(--accent-green)', color: 'var(--accent-green)', fontWeight: '700', fontSize: '13px', cursor: 'pointer', boxShadow: 'var(--shadow)' }}>
                 <Info size={18} />
                 More instructions

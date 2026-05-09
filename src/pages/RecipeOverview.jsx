@@ -552,7 +552,7 @@ const RecipeOverview = () => {
                       <p style={{ margin: '0', fontSize: '15px', fontWeight: '600', color: 'var(--text)', lineHeight: '1.4' }}>
                         {step.title}
                       </p>
-                      {step.id === 2 && (
+                      {step.id === 2 && (activeRecipe.id === 'authentic-lebanese-chicken' || activeRecipe.baseRecipeId === 'authentic-lebanese-chicken') && (
                         <button 
                           onClick={() => setIsDeboneModalOpen(true)}
                           style={{ 
