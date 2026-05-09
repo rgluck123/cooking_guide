@@ -125,7 +125,7 @@ export const initialRecipes = {
   '5': {
     id: '5',
     name: 'Lebanese Hummus & Pita',
-    image: 'https://images.unsplash.com/photo-1577348981446-24e52bfaf10c?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1541518763669-27f71462a1bb?auto=format&fit=crop&w=800&q=80',
     time: '15 mins',
     difficulty: 'Beginner',
     portions: '2 portions',

@@ -328,7 +328,7 @@ const RecipeOverview = () => {
       <div style={{ position: 'relative', height: '300px' }}>
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundImage: 'url(https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?auto=format&fit=crop&w=800&q=80)',
+          backgroundImage: `url(${activeRecipe.image})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center'
         }} />
