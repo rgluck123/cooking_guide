@@ -177,195 +177,208 @@ const LiveCooking = () => {
       return;
     }
 
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
+    let active = true;
+    let recognitionInstance = null;
 
-    recognition.onend = () => {
-      if (voiceEnabled) {
-        loopTimeoutRef.current = setTimeout(() => {
-          if (recognitionRef.current && voiceEnabled) {
-            try { recognitionRef.current.start(); } catch(e) { /* ignore */ }
+    const startListening = () => {
+      if (!active || !voiceEnabled) return;
+      
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        setVoiceSupported(true);
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          setVoiceEnabled(false);
+          setVoiceSupported(false);
+        } else if (active && voiceEnabled) {
+          // Restart after error (except for not-allowed)
+          setTimeout(startListening, 1500);
+        }
+      };
+
+      recognition.onend = () => {
+        if (active && voiceEnabled) {
+          // Rapid restart similar to repo2
+          setTimeout(startListening, 300);
+        }
+      };
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript.toLowerCase().trim();
+        console.log("Mic heard:", transcript);
+        
+        if (isModifyModalOpen) {
+          if (/(save changes|save|confirm|yes)/i.test(transcript)) {
+            handleSaveModification();
+            return;
           }
-        }, 500);
-      }
-    };
+          if (/(cancel|close|dismiss|no)/i.test(transcript)) {
+            setIsModifyModalOpen(false);
+            return;
+          }
+          
+          // Handle "add [ingredient]" or just "[ingredient]" inside the modal
+          const addItemMatch = transcript.match(/^(?:add|include) (.+)$/i);
+          const keywordMatch = transcript.match(/^(ginger|chili|pepper|salt|cumin|coriander|cinnamon)$/i);
+          const itemName = addItemMatch ? addItemMatch[1] : (keywordMatch ? keywordMatch[1] : null);
 
-    recognition.onerror = (event) => {
-      console.error('Speech recognition error:', event.error);
-      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-        setVoiceEnabled(false);
-        setVoiceSupported(false);
-      }
-    };
-
-    recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript.toLowerCase().trim();
-      
-      if (isModifyModalOpen) {
-        if (/(save changes|save|confirm|yes)/i.test(transcript)) {
-          handleSaveModification();
-          return;
+          if (itemName) {
+            setModifyInput(prev => ({ ...prev, name: itemName }));
+            speakStep(`Added ${itemName}`);
+            return;
+          }
         }
-        if (/(cancel|close|dismiss|no)/i.test(transcript)) {
-          setIsModifyModalOpen(false);
+
+        if (isDeboneModalOpen || isVoiceHelpOpen) {
+          if (/(close|dismiss|go back|back|done|ok)/i.test(transcript)) {
+            setIsDeboneModalOpen(false);
+            setIsVoiceHelpOpen(false);
+            return;
+          }
+        }
+
+        if (/(scroll down|down|go down|next screen|more)/i.test(transcript)) {
+          // If modal is open, scroll the modal. Otherwise scroll the main content pane.
+          const modalScroll = document.querySelector('[style*="maxHeight: 90vh"][style*="overflowY: auto"]');
+          const mainScroll = document.getElementById('scrollable-step-content');
+          const scrollContainer = modalScroll || mainScroll;
+          
+          if (scrollContainer) {
+            scrollContainer.scrollBy({ top: 350, behavior: 'smooth' });
+          }
           return;
         }
         
-        // Handle "add [ingredient]" or just "[ingredient]" inside the modal
-        const addItemMatch = transcript.match(/^(?:add|include) (.+)$/i);
-        const keywordMatch = transcript.match(/^(ginger|chili|pepper|salt|cumin|coriander|cinnamon)$/i);
-        const itemName = addItemMatch ? addItemMatch[1] : (keywordMatch ? keywordMatch[1] : null);
+        if (/(scroll up|up|go up|previous screen)/i.test(transcript)) {
+          const modalScroll = document.querySelector('[style*="maxHeight: 90vh"][style*="overflowY: auto"]');
+          const mainScroll = document.getElementById('scrollable-step-content');
+          const scrollContainer = modalScroll || mainScroll;
 
-        if (itemName) {
-          setModifyInput(prev => ({ ...prev, name: itemName }));
-          speakStep(`Added ${itemName}`);
+          if (scrollContainer) {
+            scrollContainer.scrollBy({ top: -350, behavior: 'smooth' });
+          }
           return;
         }
-      }
 
-      if (isDeboneModalOpen || isVoiceHelpOpen) {
-        if (/(close|dismiss|go back|back|done|ok)/i.test(transcript)) {
-          setIsDeboneModalOpen(false);
-          setIsVoiceHelpOpen(false);
+        if (/(voice help|what can i say)/i.test(transcript)) {
+          setIsVoiceHelpOpen(true);
           return;
         }
-      }
 
-      if (/(scroll down|down|go down|next screen|more)/i.test(transcript)) {
-        // If modal is open, scroll the modal. Otherwise scroll the main content pane.
-        const modalScroll = document.querySelector('[style*="maxHeight: 90vh"][style*="overflowY: auto"]');
-        const mainScroll = document.getElementById('scrollable-step-content');
-        const scrollContainer = modalScroll || mainScroll;
-        
-        if (scrollContainer) {
-          scrollContainer.scrollBy({ top: 350, behavior: 'smooth' });
+        if (/(next step|next|done|ok done|go ahead|next screen|go further|i am ready|all done|finish)/i.test(transcript)) {
+          if (currentStepIndexRef.current === visibleSteps.length - 1) {
+            setShowSavePrompt(true);
+          } else {
+            setCurrentStepIndex(prev => prev + 1);
+          }
         }
-        return;
-      }
-      
-      if (/(scroll up|up|go up|previous screen)/i.test(transcript)) {
-        const modalScroll = document.querySelector('[style*="maxHeight: 90vh"][style*="overflowY: auto"]');
-        const mainScroll = document.getElementById('scrollable-step-content');
-        const scrollContainer = modalScroll || mainScroll;
-
-        if (scrollContainer) {
-          scrollContainer.scrollBy({ top: -350, behavior: 'smooth' });
+        else if (/(previous step|previous|back|go back|last step|last screen)/i.test(transcript)) {
+          if (isModifyModalOpen || isDeboneModalOpen || isVoiceHelpOpen || showSavePromptRef.current) {
+            setIsModifyModalOpen(false);
+            setIsDeboneModalOpen(false);
+            setIsVoiceHelpOpen(false);
+            setShowSavePrompt(false);
+          } else if (currentStepIndexRef.current > 0) {
+            setCurrentStepIndex(prev => prev - 1);
+          }
         }
-        return;
-      }
-
-      if (/(voice help|what can i say)/i.test(transcript)) {
-        setIsVoiceHelpOpen(true);
-        return;
-      }
-
-      if (/(next step|next|done|ok done|go ahead|next screen|go further|i am ready|all done|finish)/i.test(transcript)) {
-        if (currentStepIndexRef.current === visibleSteps.length - 1) {
-          setShowSavePrompt(true);
-        } else {
-          setCurrentStepIndex(prev => prev + 1);
+        else if (/(home screen|home page)/i.test(transcript)) {
+          handleExit();
         }
-      }
-      else if (/(previous step|previous|back|go back|last step|last screen)/i.test(transcript)) {
-        if (isModifyModalOpen || isDeboneModalOpen || isVoiceHelpOpen || showSavePromptRef.current) {
+        else if (/(modify|do modification|put modification)/i.test(transcript)) {
+          setIsModifyModalOpen(true);
+        }
+        else if (/\b(reset|restart|clear|start over)\b.*(timer|time|countdown)/i.test(transcript) || /^(reset|restart|clear)$/i.test(transcript)) {
+          timerRef.current?.reset();
+        }
+        else if (/\b(start|launch|set|resume|continue|unpause)\b.*(timer|time|countdown)/i.test(transcript) || /^(resume|continue|unpause)$/i.test(transcript)) {
+          timerRef.current?.start();
+        }
+        else if (/\b(pause|stop|halt)\b.*(timer|time|countdown)/i.test(transcript) || /^(pause|stop|halt)$/i.test(transcript)) {
+          timerRef.current?.pause();
+        }
+        else if (/(help|more info|more information|more instructions)/i.test(transcript)) {
+          if (step?.id === 2) setIsDeboneModalOpen(true);
+        }
+        else if (/(show )?recipe overview|show (all )?recipe steps/i.test(transcript)) {
+          navigate('/recipe-overview', { state: { recipeId } });
+        }
+        else if (/(close|go to recipe|go to step)/i.test(transcript)) {
           setIsModifyModalOpen(false);
           setIsDeboneModalOpen(false);
           setIsVoiceHelpOpen(false);
           setShowSavePrompt(false);
-        } else if (currentStepIndexRef.current > 0) {
-          setCurrentStepIndex(prev => prev - 1);
         }
-      }
-      else if (/(home screen|home page)/i.test(transcript)) {
-        handleExit();
-      }
-      else if (/(modify|do modification|put modification)/i.test(transcript)) {
-        setIsModifyModalOpen(true);
-      }
-      else if (/\b(reset|restart|clear|start over)\b.*(timer|time|countdown)/i.test(transcript) || /^(reset|restart|clear)$/i.test(transcript)) {
-        timerRef.current?.reset();
-      }
-      else if (/\b(start|launch|set|resume|continue|unpause)\b.*(timer|time|countdown)/i.test(transcript) || /^(resume|continue|unpause)$/i.test(transcript)) {
-        timerRef.current?.start();
-      }
-      else if (/\b(pause|stop|halt)\b.*(timer|time|countdown)/i.test(transcript) || /^(pause|stop|halt)$/i.test(transcript)) {
-        timerRef.current?.pause();
-      }
-      else if (/(help|more info|more information|more instructions)/i.test(transcript)) {
-        if (step?.id === 2) setIsDeboneModalOpen(true);
-      }
-      else if (/(show )?recipe overview|show (all )?recipe steps/i.test(transcript)) {
-        navigate('/recipe-overview', { state: { recipeId } });
-      }
-      else if (/(close|go to recipe|go to step)/i.test(transcript)) {
-        setIsModifyModalOpen(false);
-        setIsDeboneModalOpen(false);
-        setIsVoiceHelpOpen(false);
-        setShowSavePrompt(false);
-      }
-      else if (transcript.startsWith('add ') || transcript.startsWith('include ') || transcript.startsWith('remove ')) {
-        const isRemove = transcript.startsWith('remove ');
-        const itemName = transcript.replace(/^(add|include|remove) /, '').trim();
-        
-        if (isRemove) {
-          const modToUndo = modificationsRef.current.find(m => m.name.toLowerCase() === itemName && m.stepId === step?.id);
-          if (modToUndo) {
-            handleUndoModification(modToUndo.id);
-            speakStep(`Removed ${itemName}`);
+        else if (transcript.startsWith('add ') || transcript.startsWith('include ') || transcript.startsWith('remove ')) {
+          const isRemove = transcript.startsWith('remove ');
+          const itemName = transcript.replace(/^(add|include|remove) /, '').trim();
+          
+          if (isRemove) {
+            const modToUndo = modificationsRef.current.find(m => m.name.toLowerCase() === itemName && m.stepId === step?.id);
+            if (modToUndo) {
+              handleUndoModification(modToUndo.id);
+              speakStep(`Removed ${itemName}`);
+            }
+          } else if (itemName) {
+            // If modal is open, this block won't be reached because of the earlier return,
+            // but for robustness we can check here too or just let the global handler add to list.
+            setModifications(prev => [...prev, {
+              id: Date.now(),
+              name: itemName,
+              amount: '',
+              notes: '',
+              stepId: step?.id
+            }]);
+            speakStep(`Added ${itemName}`);
           }
-        } else if (itemName) {
-          // If modal is open, this block won't be reached because of the earlier return,
-          // but for robustness we can check here too or just let the global handler add to list.
-          setModifications(prev => [...prev, {
-            id: Date.now(),
-            name: itemName,
-            amount: '',
-            notes: '',
-            stepId: step?.id
-          }]);
-          speakStep(`Added ${itemName}`);
         }
-      }
-      else if (/(unmute( voice)?|allow voice|allow speech|enable voice|enable speech)/i.test(transcript)) {
-        setVoiceOutputEnabled(true);
-      }
-      else if (/(mute|turn off voice|turn off speech|disable voice|disable speech)/i.test(transcript)) {
-        setVoiceOutputEnabled(false);
-        try { window.speechSynthesis.cancel(); } catch(e) { /* ignore */ }
-      }
-      else if (/(again|say again|speak again)/i.test(transcript)) {
-        speakStep();
-      }
-      else if (/(skip voice)/i.test(transcript)) {
-        try { window.speechSynthesis.cancel(); } catch(e) { /* ignore */ }
-      }
-      else if (/(yes|sure|save it|save recipe)/i.test(transcript)) {
-        if (showSavePromptRef.current || /save recipe/i.test(transcript)) {
-          // ...
-          addRecent({
-            id: 'authentic-lebanese-chicken',
-            name: 'Authentic Lebanese Chicken with Rice',
-            image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=80',
-            time: '40 mins',
-            portions: '2 portions'
-          });
-          setShowSavePrompt(false);
-          navigate('/save-recipe', { state: { modifications: modificationsRef.current } });
+        else if (/(unmute( voice)?|allow voice|allow speech|enable voice|enable speech)/i.test(transcript)) {
+          setVoiceOutputEnabled(true);
         }
-      }
-    };
+        else if (/(mute|turn off voice|turn off speech|disable voice|disable speech)/i.test(transcript)) {
+          setVoiceOutputEnabled(false);
+          try { window.speechSynthesis.cancel(); } catch(e) { /* ignore */ }
+        }
+        else if (/(again|say again|speak again)/i.test(transcript)) {
+          speakStep();
+        }
+        else if (/(skip voice)/i.test(transcript)) {
+          try { window.speechSynthesis.cancel(); } catch(e) { /* ignore */ }
+        }
+        else if (/(yes|sure|save it|save recipe)/i.test(transcript)) {
+          if (showSavePromptRef.current || /save recipe/i.test(transcript)) {
+            // ...
+            addRecent({
+              id: 'authentic-lebanese-chicken',
+              name: 'Authentic Lebanese Chicken with Rice',
+              image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=80',
+              time: '40 mins',
+              portions: '2 portions'
+            });
+            setShowSavePrompt(false);
+            navigate('/save-recipe', { state: { modifications: modificationsRef.current } });
+          }
+        }
+      };
 
-    recognitionRef.current = recognition;
-    
-    if (voiceEnabled) {
+      recognitionInstance = recognition;
       try { recognition.start(); } catch(e) { /* ignore */ }
+    };
+
+    if (voiceEnabled) {
+      startListening();
     }
 
     return () => {
-      if (loopTimeoutRef.current) clearTimeout(loopTimeoutRef.current);
-      try { recognitionRef.current?.abort(); } catch(e) { /* ignore */ }
+      active = false;
+      try { recognitionInstance?.abort(); } catch(e) { /* ignore */ }
     };
   }, [voiceEnabled, activeRecipe, visibleSteps.length, addRecent, navigate, recipeId, speakStep, handleExit, isModifyModalOpen, isDeboneModalOpen, isVoiceHelpOpen, handleSaveModification, voiceOutputEnabled, step]); 
 
