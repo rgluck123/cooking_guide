@@ -111,51 +111,63 @@ export const initialRecipes = {
     defaultPortions: 2,
     ingredients: [
       { id: 1, name: 'Pita Bread', quantity: '2', unit: '', baseQuantity: 1, originalName: 'Pita Bread', edited: false, removed: false, originalPosition: 1, assignedSteps: [1] },
-      { id: 2, name: 'Lettuce', quantity: '1 head', unit: '', baseQuantity: 0.5, originalName: 'Lettuce', edited: false, removed: false, originalPosition: 2, assignedSteps: [2] },
+      { id: 2, name: 'Romaine Lettuce', quantity: '1 head', unit: '', baseQuantity: 0.5, originalName: 'Romaine Lettuce', edited: false, removed: false, originalPosition: 2, assignedSteps: [2] },
       { id: 3, name: 'Tomatoes', quantity: '2', unit: '', baseQuantity: 1, originalName: 'Tomatoes', edited: false, removed: false, originalPosition: 3, assignedSteps: [2] },
       { id: 4, name: 'Cucumbers', quantity: '2', unit: '', baseQuantity: 1, originalName: 'Cucumbers', edited: false, removed: false, originalPosition: 4, assignedSteps: [2] },
-      { id: 5, name: 'Olive Oil', quantity: '3 tbsp', unit: 'tbsp', baseQuantity: 1.5, originalName: 'Olive Oil', edited: false, removed: false, originalPosition: 5, assignedSteps: [3] }
+      { id: 5, name: 'Radishes', quantity: '4', unit: '', baseQuantity: 2, originalName: 'Radishes', edited: false, removed: false, originalPosition: 5, assignedSteps: [2] },
+      { id: 6, name: 'Olive Oil', quantity: '3 tbsp', unit: 'tbsp', baseQuantity: 1.5, originalName: 'Olive Oil', edited: false, removed: false, originalPosition: 6, assignedSteps: [3] },
+      { id: 7, name: 'Lemon Juice', quantity: '2 tbsp', unit: 'tbsp', baseQuantity: 1, originalName: 'Lemon Juice', edited: false, removed: false, originalPosition: 7, assignedSteps: [3] },
+      { id: 8, name: 'Sumac', quantity: '1 tbsp', unit: 'tbsp', baseQuantity: 0.5, originalName: 'Sumac', edited: false, removed: false, originalPosition: 8, assignedSteps: [3] }
     ],
     steps: [
-      { id: 1, title: "Toast the Pita", instruction: "Cut the pita into small squares and toast them in the oven until crispy.", image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=400&q=80", hasTimer: false },
-      { id: 2, title: "Chop Vegetables", instruction: "Chop the lettuce, tomatoes, and cucumbers into bite-sized pieces.", image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=400&q=80", hasTimer: false },
-      { id: 3, title: "Mix and Dress", instruction: "Combine the vegetables and toasted pita in a large bowl. Drizzle with olive oil and toss well.", image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=400&q=80", hasTimer: false }
+      { id: 1, title: "Prepare Pita", instruction: "Cut the pita bread into 1-inch squares. Toast in a 375°F (190°C) oven for 5-8 minutes until golden brown and crispy.", image: "https://images.unsplash.com/photo-1562277729-214aa1971717?auto=format&fit=crop&w=400&q=80", hasTimer: true, timerSeconds: 480 },
+      { id: 2, title: "Chop Vegetables", instruction: "Coarsely chop the romaine lettuce. Dice the tomatoes and cucumbers. Thinly slice the radishes. Place all in a large mixing bowl.", image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=400&q=80", hasTimer: false },
+      { id: 3, title: "Make Dressing", instruction: "In a small jar, whisk together olive oil, lemon juice, sumac, and a pinch of salt until well emulsified.", image: "https://images.unsplash.com/photo-1470333732907-3f23a9d0e241?auto=format&fit=crop&w=400&q=80", hasTimer: false },
+      { id: 4, title: "Toss and Serve", instruction: "Add the toasted pita to the bowl of vegetables. Pour the dressing over everything and toss gently to combine. Serve immediately while the pita is still crunchy.", image: "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=400&q=80", hasTimer: false }
     ]
   },
   '5': {
     id: '5',
     name: 'Lebanese Hummus & Pita',
-    image: 'https://images.unsplash.com/photo-1541518763669-27f71462a1bb?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1574071318508-1cdbad80ad38?auto=format&fit=crop&w=800&q=80',
     time: '15 mins',
     difficulty: 'Beginner',
     portions: '2 portions',
     defaultPortions: 2,
     ingredients: [
-      { id: 1, name: 'Chickpeas', quantity: '1 can', unit: 'can', baseQuantity: 0.5, originalName: 'Chickpeas', edited: false, removed: false, originalPosition: 1, assignedSteps: [1] },
-      { id: 2, name: 'Tahini', quantity: '2 tbsp', unit: 'tbsp', baseQuantity: 1, originalName: 'Tahini', edited: false, removed: false, originalPosition: 2, assignedSteps: [1] },
-      { id: 3, name: 'Garlic', quantity: '1 clove', unit: 'clove', baseQuantity: 0.5, originalName: 'Garlic', edited: false, removed: false, originalPosition: 3, assignedSteps: [1] },
-      { id: 4, name: 'Lemon Juice', quantity: '1 tbsp', unit: 'tbsp', baseQuantity: 0.5, originalName: 'Lemon Juice', edited: false, removed: false, originalPosition: 4, assignedSteps: [1] }
+      { id: 1, name: 'Chickpeas', quantity: '1 can', unit: 'can', baseQuantity: 0.5, originalName: 'Chickpeas', edited: false, removed: false, originalPosition: 1, assignedSteps: [1, 2] },
+      { id: 2, name: 'Tahini', quantity: '1/2 cup', unit: 'cup', baseQuantity: 0.25, originalName: 'Tahini', edited: false, removed: false, originalPosition: 2, assignedSteps: [3] },
+      { id: 3, name: 'Garlic', quantity: '2 cloves', unit: 'cloves', baseQuantity: 1, originalName: 'Garlic', edited: false, removed: false, originalPosition: 3, assignedSteps: [3] },
+      { id: 4, name: 'Lemon Juice', quantity: '3 tbsp', unit: 'tbsp', baseQuantity: 1.5, originalName: 'Lemon Juice', edited: false, removed: false, originalPosition: 4, assignedSteps: [3] },
+      { id: 5, name: 'Olive Oil', quantity: '2 tbsp', unit: 'tbsp', baseQuantity: 1, originalName: 'Olive Oil', edited: false, removed: false, originalPosition: 5, assignedSteps: [4] }
     ],
     steps: [
-      { id: 1, title: "Blend Ingredients", instruction: "Add chickpeas, tahini, garlic, and lemon juice to a food processor. Blend until smooth.", image: "https://images.unsplash.com/photo-1577348981446-24e52bfaf10c?auto=format&fit=crop&w=400&q=80", hasTimer: true, timerSeconds: 120 }
+      { id: 1, title: "Rinse Chickpeas", instruction: "Drain the chickpeas and rinse them thoroughly under cold water to remove the canning liquid.", image: "https://images.unsplash.com/photo-1585821321301-3011013a76ae?auto=format&fit=crop&w=400&q=80", hasTimer: false },
+      { id: 2, title: "Simmer Chickpeas", instruction: "Place chickpeas in a pot with a pinch of baking soda. Cover with water and simmer for 10-15 minutes until they are very soft and falling apart.", image: "https://images.unsplash.com/photo-1594911771141-860e6f5c8ec5?auto=format&fit=crop&w=400&q=80", hasTimer: true, timerSeconds: 900 },
+      { id: 3, title: "Blend for Fluffiness", instruction: "Process the warm chickpeas in a food processor until a thick paste forms. Add tahini, crushed garlic, and lemon juice. While blending, slowly add 2-3 tablespoons of ice-cold water until the hummus is light and airy.", image: "https://images.unsplash.com/photo-1637949385162-e416fb15b2ce?auto=format&fit=crop&w=400&q=80", hasTimer: false },
+      { id: 4, title: "Garnish and Serve", instruction: "Transfer the hummus to a shallow bowl. Create a well in the center with a spoon, drizzle generously with olive oil, and sprinkle with a dash of paprika. Serve with warm pita bread.", image: "https://images.unsplash.com/photo-1574071318508-1cdbad80ad38?auto=format&fit=crop&w=400&q=80", hasTimer: false }
     ]
   },
   '6': {
     id: '6',
     name: 'Lebanese Falafel Wrap',
-    image: 'https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1547050605-2f122ffad69a?auto=format&fit=crop&w=800&q=80',
     time: '30 mins',
     difficulty: 'Intermediate',
     portions: '2 portions',
     defaultPortions: 2,
     ingredients: [
-      { id: 1, name: 'Falafel', quantity: '6 pieces', unit: 'pieces', baseQuantity: 3, originalName: 'Falafel', edited: false, removed: false, originalPosition: 1, assignedSteps: [1] },
-      { id: 2, name: 'Pita Bread', quantity: '2', unit: '', baseQuantity: 1, originalName: 'Pita Bread', edited: false, removed: false, originalPosition: 2, assignedSteps: [2] },
-      { id: 3, name: 'Tahini Sauce', quantity: '2 tbsp', unit: 'tbsp', baseQuantity: 1, originalName: 'Tahini Sauce', edited: false, removed: false, originalPosition: 3, assignedSteps: [2] }
+      { id: 1, name: 'Falafel', quantity: '8 pieces', unit: 'pieces', baseQuantity: 4, originalName: 'Falafel', edited: false, removed: false, originalPosition: 1, assignedSteps: [1, 2] },
+      { id: 2, name: 'Pita Bread', quantity: '2', unit: '', baseQuantity: 1, originalName: 'Pita Bread', edited: false, removed: false, originalPosition: 2, assignedSteps: [3] },
+      { id: 3, name: 'Tahini Sauce', quantity: '1/4 cup', unit: 'cup', baseQuantity: 0.125, originalName: 'Tahini Sauce', edited: false, removed: false, originalPosition: 3, assignedSteps: [3] },
+      { id: 4, name: 'Pickled Turnips', quantity: '4 slices', unit: '', baseQuantity: 2, originalName: 'Pickled Turnips', edited: false, removed: false, originalPosition: 4, assignedSteps: [3] },
+      { id: 5, name: 'Fresh Parsley', quantity: '1/2 bunch', unit: '', baseQuantity: 0.25, originalName: 'Fresh Parsley', edited: false, removed: false, originalPosition: 5, assignedSteps: [3] }
     ],
     steps: [
-      { id: 1, title: "Warm Falafel", instruction: "Heat the falafel in the oven or microwave until warm.", image: "https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?auto=format&fit=crop&w=400&q=80", hasTimer: false },
-      { id: 2, title: "Assemble Wrap", instruction: "Place the falafel on the pita bread, drizzle with tahini sauce, and wrap tightly.", image: "https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?auto=format&fit=crop&w=400&q=80", hasTimer: false }
+      { id: 1, title: "Prepare Falafel", instruction: "If using pre-made falafel, warm them in a 350°F (175°C) oven for 10 minutes until heated through and slightly crispy.", image: "https://images.unsplash.com/photo-1547050605-2f122ffad69a?auto=format&fit=crop&w=400&q=80", hasTimer: true, timerSeconds: 600 },
+      { id: 2, title: "Crush Falafel", instruction: "Lightly crush the warm falafel balls so they lay flat and stay inside the wrap more easily.", image: "https://images.unsplash.com/photo-1547050605-2f122ffad69a?auto=format&fit=crop&w=400&q=80", hasTimer: false },
+      { id: 3, title: "Assemble Wrap", instruction: "Lay the pita bread flat. Spread a layer of tahini sauce, add the falafel, pickled turnips, and fresh parsley. Fold the sides and roll tightly into a cylinder.", image: "https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?auto=format&fit=crop&w=400&q=80", hasTimer: false },
+      { id: 4, title: "Toast the Wrap", instruction: "Place the assembled wrap on a hot dry pan for 1 minute per side to seal the seam and add a nice crunch to the bread.", image: "https://images.unsplash.com/photo-1626700051175-656a42359641?auto=format&fit=crop&w=400&q=80", hasTimer: true, timerSeconds: 120 }
     ]
   }
 };
