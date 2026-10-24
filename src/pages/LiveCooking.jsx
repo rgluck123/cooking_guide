@@ -1,0 +1,683 @@
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Home, Mic, MicOff, Pencil, Volume2, VolumeX, Info, HelpCircle } from 'lucide-react';
+import { useRecipes } from '../context/RecipeContext';
+import CookingTimer from '../components/CookingTimer';
+import DeboningModal from '../components/DeboningModal';
+import SubstituteModal from '../components/SubstituteModal';
+
+const LiveCooking = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { addRecent, liveCookingDefaults, recipeProgress, updateProgress, clearProgress, activeRecipe, setActiveRecipeById, testingMode, updateActiveRecipeIngredients } = useRecipes();
+  
+  const recipeId = location.state?.recipeId || 'authentic-lebanese-chicken';
+
+  useEffect(() => {
+    if (!activeRecipe || activeRecipe.id !== recipeId) {
+      setActiveRecipeById(recipeId);
+    }
+  }, [recipeId, activeRecipe, setActiveRecipeById]);
+
+  const [currentStepIndex, setCurrentStepIndex] = useState(() => {
+    const progress = recipeProgress[recipeId];
+    return progress ? progress.currentStep : 0;
+  });
+
+  const [isModifyModalOpen, setIsModifyModalOpen] = useState(false);
+  const [isDeboneModalOpen, setIsDeboneModalOpen] = useState(false);
+  const [isVoiceHelpOpen, setIsVoiceHelpOpen] = useState(false);
+  const [isSubstituteModalOpen, setIsSubstituteModalOpen] = useState(false);
+  const [showSavePrompt, setShowSavePrompt] = useState(false);
+  const [modifications, setModifications] = useState([]);
+  const [modifyInput, setModifyInput] = useState({ name: '', amount: '', notes: '' });
+  const [voiceEnabled, setVoiceEnabled] = useState(liveCookingDefaults.micEnabled);
+  const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(liveCookingDefaults.voiceOverEnabled);
+  const [voiceSupported, setVoiceSupported] = useState(true);
+  const recognitionRef = useRef(null);
+  const timerRef = useRef(null);
+  const loopTimeoutRef = useRef(null);
+  const touchStartX = useRef(0);
+  const hasRequestedMicRef = useRef(false);
+
+  const allVisibleSteps = useMemo(() => {
+    return activeRecipe?.steps.filter(step => {
+      const stepIngredients = activeRecipe.ingredients.filter(ing => 
+        ing.assignedSteps && ing.assignedSteps.includes(step.id)
+      );
+      if (stepIngredients.length === 0) return true;
+      return stepIngredients.some(ing => !ing.removed);
+    }) || [];
+  }, [activeRecipe]);
+
+  const visibleSteps = useMemo(() => {
+    if (!testingMode || allVisibleSteps.length === 0) return allVisibleSteps;
+    const stirStepIndex = allVisibleSteps.findIndex(s => s.id === 6);
+    const finalStepIndex = allVisibleSteps.findIndex(s => s.id === 11);
+    if (stirStepIndex === -1 || finalStepIndex === -1) return allVisibleSteps;
+    return allVisibleSteps.filter((s, idx) => idx <= stirStepIndex || idx >= finalStepIndex);
+  }, [allVisibleSteps, testingMode]);
+
+  const step = visibleSteps[currentStepIndex] || visibleSteps[0];
+  const isFirstStep = currentStepIndex === 0;
+  const isLastStep = currentStepIndex === visibleSteps.length - 1;
+  const progressPercent = useMemo(() => {
+    if (allVisibleSteps.length === 0 || !step) return 0;
+    const actualStepIndex = allVisibleSteps.findIndex(s => s.id === step.id);
+    return ((actualStepIndex + 1) / allVisibleSteps.length) * 100;
+  }, [allVisibleSteps, step]);
+
+  const stepIngredients = useMemo(() => {
+    return activeRecipe?.ingredients.filter(ing => 
+      ing.assignedSteps && ing.assignedSteps.includes(step?.id) && !ing.removed && !ing.hidden
+    ) || [];
+  }, [activeRecipe, step]);
+
+  const currentStepModifications = useMemo(() => {
+    return modifications.filter(mod => mod.stepId === step?.id);
+  }, [modifications, step]);
+
+  const handleUndoModification = (modId) => {
+    setModifications(prev => prev.filter(m => m.id !== modId));
+  };
+
+  const handleSaveModification = () => {
+    if (modifyInput.name || modifyInput.amount || modifyInput.notes) {
+      setModifications(prev => [...prev, { 
+        id: Date.now(), 
+        ...modifyInput, 
+        stepId: step?.id 
+      }]);
+      setModifyInput({ name: '', amount: '', notes: '' });
+    }
+    setIsModifyModalOpen(false);
+  };
+
+  const handleSubstitute = (ids, name, quantity) => {
+    const newIngredients = activeRecipe.ingredients.map(ing => {
+      if (ids.includes(ing.id)) {
+        return { ...ing, name, quantity, edited: true };
+      }
+      return ing;
+    });
+    updateActiveRecipeIngredients(newIngredients);
+    setIsSubstituteModalOpen(false);
+  };
+
+  const handleExit = useCallback(() => {
+    try { window.speechSynthesis.cancel(); } catch(e) { /* ignore */ }
+    if (visibleSteps.length > 0) {
+      updateProgress(recipeId, currentStepIndex, visibleSteps.length);
+    }
+    navigate('/');
+  }, [navigate, visibleSteps.length, updateProgress, recipeId, currentStepIndex]);
+
+  useEffect(() => {
+    if (visibleSteps.length > 0) {
+      updateProgress(recipeId, currentStepIndex, visibleSteps.length);
+    }
+  }, [currentStepIndex, recipeId, updateProgress, visibleSteps.length]);
+
+  const nextStep = () => {
+    if (isLastStep) {
+      setShowSavePrompt(true);
+    } else {
+      setCurrentStepIndex(prev => prev + 1);
+    }
+  };
+  const prevStep = () => !isFirstStep && setCurrentStepIndex(prev => prev - 1);
+
+  const isFirstSpeakDoneRef = useRef(false);
+
+  const speakStep = useCallback((customText) => {
+    if (!voiceSupported || !voiceOutputEnabled || (!step && !customText)) return;
+    
+    const voices = window.speechSynthesis.getVoices();
+    // If voices aren't loaded yet, wait and retry
+    if (voices.length === 0) {
+      setTimeout(() => speakStep(customText), 300);
+      return;
+    }
+
+    try { window.speechSynthesis.cancel(); } catch(e) { /* ignore */ }
+    
+    const textToSpeak = customText || step.instruction;
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    
+    // Explicitly find an English voice
+    const englishVoice = voices.find(v => v.lang.startsWith('en')) || voices.find(v => v.lang.includes('en'));
+    if (englishVoice) {
+      utterance.voice = englishVoice;
+    }
+    
+    utterance.lang = 'en-US';
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    
+    window.speechSynthesis.speak(utterance);
+    if (!customText) isFirstSpeakDoneRef.current = true;
+  }, [voiceSupported, voiceOutputEnabled, step]);
+
+  const currentStepIndexRef = useRef(currentStepIndex);
+  const showSavePromptRef = useRef(showSavePrompt);
+  const modificationsRef = useRef(modifications);
+
+  useEffect(() => {
+    currentStepIndexRef.current = currentStepIndex;
+    showSavePromptRef.current = showSavePrompt;
+    modificationsRef.current = modifications;
+  }, [currentStepIndex, showSavePrompt, modifications]);
+
+  useEffect(() => {
+    if (!activeRecipe || visibleSteps.length === 0) return;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setVoiceSupported(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onend = () => {
+      if (voiceEnabled) {
+        loopTimeoutRef.current = setTimeout(() => {
+          if (recognitionRef.current && voiceEnabled) {
+            try { recognitionRef.current.start(); } catch(e) { /* ignore */ }
+          }
+        }, 500);
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        setVoiceEnabled(false);
+        setVoiceSupported(false);
+      }
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript.toLowerCase().trim();
+      
+      if (isModifyModalOpen) {
+        if (/(save changes|save|confirm|yes)/i.test(transcript)) {
+          handleSaveModification();
+          return;
+        }
+        if (/(cancel|close|dismiss|no)/i.test(transcript)) {
+          setIsModifyModalOpen(false);
+          return;
+        }
+        
+        // Handle "add [ingredient]" or just "[ingredient]" inside the modal
+        const addItemMatch = transcript.match(/^(?:add|include) (.+)$/i);
+        const keywordMatch = transcript.match(/^(ginger|chili|pepper|salt|cumin|coriander|cinnamon)$/i);
+        const itemName = addItemMatch ? addItemMatch[1] : (keywordMatch ? keywordMatch[1] : null);
+
+        if (itemName) {
+          setModifyInput(prev => ({ ...prev, name: itemName }));
+          speakStep(`Added ${itemName}`);
+          return;
+        }
+      }
+
+      if (isDeboneModalOpen || isVoiceHelpOpen) {
+        if (/(close|dismiss|go back|back|done|ok)/i.test(transcript)) {
+          setIsDeboneModalOpen(false);
+          setIsVoiceHelpOpen(false);
+          return;
+        }
+      }
+
+      if (/(scroll down|down|go down|next screen|more)/i.test(transcript)) {
+        // If modal is open, scroll the modal. Otherwise scroll the main content pane.
+        const modalScroll = document.querySelector('[style*="maxHeight: 90vh"][style*="overflowY: auto"]');
+        const mainScroll = document.getElementById('scrollable-step-content');
+        const scrollContainer = modalScroll || mainScroll;
+        
+        if (scrollContainer) {
+          scrollContainer.scrollBy({ top: 350, behavior: 'smooth' });
+        }
+        return;
+      }
+      
+      if (/(scroll up|up|go up|previous screen)/i.test(transcript)) {
+        const modalScroll = document.querySelector('[style*="maxHeight: 90vh"][style*="overflowY: auto"]');
+        const mainScroll = document.getElementById('scrollable-step-content');
+        const scrollContainer = modalScroll || mainScroll;
+
+        if (scrollContainer) {
+          scrollContainer.scrollBy({ top: -350, behavior: 'smooth' });
+        }
+        return;
+      }
+
+      if (/(voice help|what can i say)/i.test(transcript)) {
+        setIsVoiceHelpOpen(true);
+        return;
+      }
+
+      if (/(next step|next|done|ok done|go ahead|next screen|go further|i am ready|all done|finish)/i.test(transcript)) {
+        if (currentStepIndexRef.current === visibleSteps.length - 1) {
+          setShowSavePrompt(true);
+        } else {
+          setCurrentStepIndex(prev => prev + 1);
+        }
+      }
+      else if (/(previous step|previous|back|go back|last step|last screen)/i.test(transcript)) {
+        if (isModifyModalOpen || isDeboneModalOpen || isVoiceHelpOpen || showSavePromptRef.current) {
+          setIsModifyModalOpen(false);
+          setIsDeboneModalOpen(false);
+          setIsVoiceHelpOpen(false);
+          setShowSavePrompt(false);
+        } else if (currentStepIndexRef.current > 0) {
+          setCurrentStepIndex(prev => prev - 1);
+        }
+      }
+      else if (/(home screen|home page)/i.test(transcript)) {
+        handleExit();
+      }
+      else if (/(modify|do modification|put modification)/i.test(transcript)) {
+        setIsModifyModalOpen(true);
+      }
+      else if (/\b(reset|restart|clear|start over)\b.*(timer|time|countdown)/i.test(transcript) || /^(reset|restart|clear)$/i.test(transcript)) {
+        timerRef.current?.reset();
+      }
+      else if (/\b(start|launch|set|resume|continue|unpause)\b.*(timer|time|countdown)/i.test(transcript) || /^(resume|continue|unpause)$/i.test(transcript)) {
+        timerRef.current?.start();
+      }
+      else if (/\b(pause|stop|halt)\b.*(timer|time|countdown)/i.test(transcript) || /^(pause|stop|halt)$/i.test(transcript)) {
+        timerRef.current?.pause();
+      }
+      else if (/(help|more info|more information|more instructions)/i.test(transcript)) {
+        if (step?.id === 2) setIsDeboneModalOpen(true);
+      }
+      else if (/(show )?recipe overview|show (all )?recipe steps/i.test(transcript)) {
+        navigate('/recipe-overview', { state: { recipeId } });
+      }
+      else if (/(close|go to recipe|go to step)/i.test(transcript)) {
+        setIsModifyModalOpen(false);
+        setIsDeboneModalOpen(false);
+        setIsVoiceHelpOpen(false);
+        setShowSavePrompt(false);
+      }
+      else if (transcript.startsWith('add ') || transcript.startsWith('include ') || transcript.startsWith('remove ')) {
+        const isRemove = transcript.startsWith('remove ');
+        const itemName = transcript.replace(/^(add|include|remove) /, '').trim();
+        
+        if (isRemove) {
+          const modToUndo = modificationsRef.current.find(m => m.name.toLowerCase() === itemName && m.stepId === step?.id);
+          if (modToUndo) {
+            handleUndoModification(modToUndo.id);
+            speakStep(`Removed ${itemName}`);
+          }
+        } else if (itemName) {
+          // If modal is open, this block won't be reached because of the earlier return,
+          // but for robustness we can check here too or just let the global handler add to list.
+          setModifications(prev => [...prev, {
+            id: Date.now(),
+            name: itemName,
+            amount: '',
+            notes: '',
+            stepId: step?.id
+          }]);
+          speakStep(`Added ${itemName}`);
+        }
+      }
+      else if (/(unmute( voice)?|allow voice|allow speech|enable voice|enable speech)/i.test(transcript)) {
+        setVoiceOutputEnabled(true);
+      }
+      else if (/(mute|turn off voice|turn off speech|disable voice|disable speech)/i.test(transcript)) {
+        setVoiceOutputEnabled(false);
+        try { window.speechSynthesis.cancel(); } catch(e) { /* ignore */ }
+      }
+      else if (/(again|say again|speak again)/i.test(transcript)) {
+        speakStep();
+      }
+      else if (/(skip voice)/i.test(transcript)) {
+        try { window.speechSynthesis.cancel(); } catch(e) { /* ignore */ }
+      }
+      else if (/(yes|sure|save it|save recipe)/i.test(transcript)) {
+        if (showSavePromptRef.current || /save recipe/i.test(transcript)) {
+          // ...
+          addRecent({
+            id: activeRecipe.id,
+            name: activeRecipe.name,
+            image: activeRecipe.image,
+            time: activeRecipe.time || '40 mins',
+            portions: activeRecipe.portions || '2 portions'
+          });
+          setShowSavePrompt(false);
+          navigate('/save-recipe', { state: { modifications: modificationsRef.current } });
+        }
+      }
+    };
+
+    recognitionRef.current = recognition;
+    
+    if (voiceEnabled) {
+      try { recognition.start(); } catch(e) { /* ignore */ }
+    }
+
+    return () => {
+      if (loopTimeoutRef.current) clearTimeout(loopTimeoutRef.current);
+      try { recognitionRef.current?.abort(); } catch(e) { /* ignore */ }
+    };
+  }, [voiceEnabled, activeRecipe, visibleSteps.length, addRecent, navigate, recipeId, speakStep, handleExit, isModifyModalOpen, isDeboneModalOpen, isVoiceHelpOpen, handleSaveModification, voiceOutputEnabled, step]); 
+
+  const voicesLoadedRef = useRef(false);
+
+  useEffect(() => {
+    const handleVoicesChanged = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0 && !voicesLoadedRef.current) {
+        voicesLoadedRef.current = true;
+        // If we haven't spoken yet and are on the first step, trigger it
+        if (step && !isFirstSpeakDoneRef.current) {
+          speakStep();
+        }
+      }
+    };
+
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = handleVoicesChanged;
+    }
+    
+    handleVoicesChanged();
+
+    return () => {
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = null;
+      }
+    };
+  }, [step, speakStep]);
+
+  // Speak the step whenever it changes
+  useEffect(() => {
+    if (!activeRecipe || !step) return;
+    
+    // Use a slightly longer timeout on mount to allow browser to resume after mic prompt
+    const isFirstLoad = !isFirstSpeakDoneRef.current;
+    const timer = setTimeout(() => {
+      if (isFirstLoad) {
+        if (!isFirstSpeakDoneRef.current) speakStep();
+      } else {
+        speakStep();
+      }
+    }, isFirstLoad ? 1000 : 400);
+    
+    return () => {
+      clearTimeout(timer);
+      try { window.speechSynthesis.cancel(); } catch(e) { /* ignore */ }
+    };
+  }, [step?.id, activeRecipe, speakStep]);
+
+  useEffect(() => {
+    if (showSavePrompt) {
+      speakStep("Do you want to save this recipe?");
+    }
+  }, [showSavePrompt, speakStep]);
+
+  const toggleVoiceListening = async () => {
+    if (!voiceEnabled) {
+      try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          stream.getTracks().forEach(track => track.stop());
+        }
+      } catch (err) {
+        console.error("Microphone permission denied or ignored", err);
+      }
+    }
+    setVoiceEnabled(prev => !prev);
+  };
+
+  if (!activeRecipe || visibleSteps.length === 0) return null;
+
+  return (
+    <div 
+      style={{ height: '100dvh', backgroundColor: 'var(--bg)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+      onTouchStart={(e) => { 
+        if (isModifyModalOpen || isDeboneModalOpen || isVoiceHelpOpen || showSavePrompt) return;
+        touchStartX.current = e.touches[0].clientX; 
+      }}
+      onTouchEnd={(e) => {
+        if (isModifyModalOpen || isDeboneModalOpen || isVoiceHelpOpen || showSavePrompt) return;
+        const touchEndX = e.changedTouches[0].clientX;
+        const diffX = touchStartX.current - touchEndX;
+        if (diffX > 50) nextStep();
+        if (diffX < -50) prevStep();
+      }}
+    >
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+        <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: 'calc(20px + env(safe-area-inset-top)) 20px 12px', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <button onClick={handleExit} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '50%', padding: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: 'var(--shadow)', flexShrink: 0 }}>
+              <Home size={24} color="var(--text)" />
+            </button>
+            <button onClick={() => setIsVoiceHelpOpen(true)} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: 'var(--shadow)', flexShrink: 0 }}>
+              <HelpCircle size={20} color="var(--text)" />
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginLeft: 'auto' }}>
+            <button
+              onClick={toggleVoiceListening}
+              style={{ minWidth: '44px', minHeight: '44px', borderRadius: '999px', border: 'none', backgroundColor: voiceEnabled ? 'var(--accent-green-light)' : 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: 'var(--shadow)' }}
+            >
+              {voiceEnabled ? <Mic size={18} color="var(--accent-green)" /> : <MicOff size={18} color="var(--text-light)" />}
+            </button>
+
+            <button
+              onClick={() => {
+                const next = !voiceOutputEnabled;
+                setVoiceOutputEnabled(next);
+                if (!next) try { window.speechSynthesis.cancel(); } catch(e) { /* ignore */ }
+              }}
+              style={{ minWidth: '44px', minHeight: '44px', borderRadius: '999px', border: '1px solid var(--border)', backgroundColor: voiceOutputEnabled ? 'var(--accent-green-light)' : 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: 'var(--shadow)' }}
+            >
+              {voiceOutputEnabled ? <Volume2 size={18} color="var(--accent-green)" /> : <VolumeX size={18} color="var(--text-light)" />}
+            </button>
+          </div>
+        </header>
+
+        <div style={{ padding: '0 20px 10px', flexShrink: 0 }}>
+          <div style={{ height: '8px', borderRadius: '999px', backgroundColor: 'var(--accent-green-light)', overflow: 'hidden' }}>
+            <div style={{ width: `${progressPercent}%`, height: '100%', borderRadius: '999px', backgroundColor: 'var(--accent-green)' }} />
+          </div>
+        </div>
+
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '16px 20px 12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '24px', marginBottom: '8px' }}>
+            <h2 style={{ fontFamily: 'var(--heading)', fontSize: '28px', fontWeight: '700', color: 'var(--text)', margin: 0, lineHeight: 1.3 }}>
+              {step?.title}
+            </h2>
+          </div>
+
+          <p style={{ fontSize: '15px', color: 'var(--text-light)', lineHeight: '1.8', marginTop: '6px', marginBottom: '20px', textAlign: 'center' }}>
+            {step?.instruction}
+          </p>
+
+          {(stepIngredients.length > 0 || currentStepModifications.length > 0) && (
+            <div style={{ marginBottom: '24px', padding: '16px 20px', backgroundColor: 'var(--surface)', borderRadius: '20px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow)' }}>
+              <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-light)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px', opacity: 0.7 }}>Ingredients for this step</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {stepIngredients.map(ing => (
+                  <div key={ing.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--text)', fontSize: '15px', fontWeight: '600' }}>
+                    <span>{ing.name}{ing.edited && ' (substituted)'}</span>
+                    <span style={{ color: 'var(--accent-green)', fontWeight: '700' }}>{ing.quantity}</span>
+                  </div>
+                ))}
+                {currentStepModifications.map(mod => (
+                  <div key={mod.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--text)', fontSize: '15px', fontWeight: '600' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <span>{mod.name} (modified)</span>
+                      <button 
+                        onClick={() => handleUndoModification(mod.id)}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-light)', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', padding: '2px 4px', cursor: 'pointer', opacity: 0.6 }}
+                      >
+                        Undo
+                      </button>
+                    </div>
+                    {mod.amount && <span style={{ color: 'var(--accent-green)', fontWeight: '700' }}>{mod.amount}</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {step && ![1, 2, 5, 7, 9].includes(step.id) && (
+            <div style={{ width: '100%', height: '280px', borderRadius: '20px', overflow: 'hidden', marginBottom: '24px', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)' }}>
+              <img src={step.image} alt={step.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
+            {step?.id === 2 && (activeRecipe.id === 'authentic-lebanese-chicken' || activeRecipe.baseRecipeId === 'authentic-lebanese-chicken') && (
+              <button onClick={() => setIsDeboneModalOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 20px', borderRadius: '999px', backgroundColor: 'white', border: '1.5px solid var(--accent-green)', color: 'var(--accent-green)', fontWeight: '700', fontSize: '13px', cursor: 'pointer', boxShadow: 'var(--shadow)' }}>
+                <Info size={18} />
+                More instructions
+              </button>
+            )}
+
+            <button onClick={() => setIsModifyModalOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 20px', borderRadius: '999px', backgroundColor: 'var(--accent-green-light)', border: '1.5px solid var(--accent-green)', color: 'var(--accent-green)', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+              <Pencil size={16} />
+              Modify
+            </button>
+          </div>
+
+          {step?.hasTimer && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+              <CookingTimer ref={timerRef} durationInSeconds={step.timerSeconds} />
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div style={{ flexShrink: 0, padding: '12px 20px calc(16px + env(safe-area-inset-bottom))', backgroundColor: 'var(--bg)', borderTop: '1px solid rgba(234, 234, 234, 0.8)' }}>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button onClick={prevStep} disabled={isFirstStep} style={{ flex: 1, minHeight: '48px', borderRadius: '999px', backgroundColor: 'white', color: 'var(--text)', border: '1.5px solid var(--text)', fontWeight: '600', fontSize: '14px', opacity: isFirstStep ? 0.4 : 1 }}>
+            ← Previous
+          </button>
+          <button onClick={nextStep} style={{ flex: 1, minHeight: '48px', borderRadius: '999px', backgroundColor: 'var(--text)', color: 'white', border: 'none', fontWeight: '600', fontSize: '14px' }}>
+            {isLastStep ? 'Finish' : 'Next →'}
+          </button>
+        </div>
+      </div>
+
+      {isModifyModalOpen && (
+        <div 
+          onClick={() => setIsModifyModalOpen(false)}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)', zIndex: 100, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', padding: '20px' }}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: 'var(--surface)', borderRadius: '25px', padding: '20px', maxWidth: '480px', width: 'calc(100% - 40px)', maxHeight: '80vh', overflowY: 'auto', border: '1px solid #1b1b1b' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--text)', margin: 0, fontFamily: 'var(--heading)' }}>Modify Ingredient</h2>
+              <button onClick={() => setIsModifyModalOpen(false)} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: 'var(--text)', padding: 0 }}>✕</button>
+            </div>
+            <div style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text)' }}>Ingredient name</label>
+              <input type="text" placeholder="e.g., chili pepper" value={modifyInput.name} onChange={(e) => setModifyInput({...modifyInput, name: e.target.value})} style={{ width: '100%', padding: '12px 16px', border: '1px solid var(--border)', borderRadius: '12px', fontSize: '14px', color: 'var(--text)', backgroundColor: 'var(--bg)', outline: 'none', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text)' }}>Amount</label>
+              <input type="text" placeholder="e.g., 1 tablespoon" value={modifyInput.amount} onChange={(e) => setModifyInput({...modifyInput, amount: e.target.value})} style={{ width: '100%', padding: '12px 16px', border: '1px solid var(--border)', borderRadius: '12px', fontSize: '14px', color: 'var(--text)', backgroundColor: 'var(--bg)', outline: 'none', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text)' }}>Notes</label>
+              <textarea placeholder="Add notes..." value={modifyInput.notes} onChange={(e) => setModifyInput({...modifyInput, notes: e.target.value})} style={{ width: '100%', padding: '12px 16px', border: '1px solid var(--border)', borderRadius: '12px', fontSize: '14px', color: 'var(--text)', backgroundColor: 'var(--bg)', outline: 'none', minHeight: '80px', resize: 'none', boxSizing: 'border-box' }} />
+            </div>
+            <button onClick={handleSaveModification} style={{ width: '100%', padding: '14px 24px', backgroundColor: 'var(--accent-green)', color: 'white', border: 'none', borderRadius: '24px', fontWeight: '600', fontSize: '16px', cursor: 'pointer' }}>Save Changes</button>
+          </div>
+        </div>
+      )}
+
+      {showSavePrompt && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+          <div style={{ backgroundColor: 'var(--surface)', borderRadius: '24px', padding: '32px 24px', maxWidth: '480px', width: 'calc(100% - 40px)', border: '1px solid var(--border)' }}>
+            <h2 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--text)', textAlign: 'center', marginTop: 0 }}>Perfect! You finished this recipe!</h2>
+            <p style={{ fontSize: '16px', color: 'var(--text-light)', textAlign: 'center', marginBottom: '32px' }}>Do you want to save this recipe to "My Recipe Book"?</p>
+            <div style={{ display: 'flex', gap: '16px', flexDirection: 'column' }}>
+              <button 
+                onClick={() => {
+                  // Do NOT clear progress here. We want to be able to navigate back exactly.
+                  addRecent({
+                    id: activeRecipe.id,
+                    name: activeRecipe.name,
+                    image: activeRecipe.image,
+                    time: activeRecipe.time || '40 mins',
+                    portions: activeRecipe.portions || '2 portions'
+                  });
+                  setShowSavePrompt(false);
+                  navigate('/save-recipe', { state: { modifications: modificationsRef.current } });
+                }} 
+                style={{ width: '100%', padding: '16px 24px', backgroundColor: 'var(--accent-green)', color: 'white', border: 'none', borderRadius: '24px', fontWeight: '600', fontSize: '16px' }}
+              >Yes, I want</button>
+              <button onClick={() => { clearProgress(recipeId); setShowSavePrompt(false); navigate('/'); }} style={{ width: '100%', padding: '16px 24px', backgroundColor: 'white', color: 'var(--text)', border: '1.5px solid var(--text)', borderRadius: '24px', fontWeight: '600', fontSize: '16px' }}>No, I don't</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isVoiceHelpOpen && (
+        <div 
+          onClick={() => setIsVoiceHelpOpen(false)}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.4)', zIndex: 2000, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px' }}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: '480px', backgroundColor: 'var(--surface)', borderRadius: '20px', padding: '20px', boxShadow: '0 8px 32px rgba(0,0,0,0.15)', border: '1px solid var(--border)', animation: 'slideDown 0.3s ease-out' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '700', margin: 0, fontFamily: 'var(--heading)' }}>Voice Commands</h3>
+              <button onClick={() => setIsVoiceHelpOpen(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: 'var(--text)', padding: 0 }}>✕</button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '60vh', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '14px', fontWeight: '700' }}>Navigation</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Next step", "Previous step", "Go ahead", "Go back"</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '14px', fontWeight: '700' }}>Timer</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Start timer", "Pause timer", "Reset timer"</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '14px', fontWeight: '700' }}>Modify</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Modify", "Save changes", "Undo"</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '14px', fontWeight: '700' }}>Instructions</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Help", "More instructions", "Voice help"</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '14px', fontWeight: '700' }}>General interaction</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>"Mute voice", "Enable voice", "Say again"</span>
+              </div>            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+
+      <DeboningModal 
+        isOpen={isDeboneModalOpen} 
+        onClose={() => setIsDeboneModalOpen(false)} 
+      />
+
+      <SubstituteModal
+        isOpen={isSubstituteModalOpen}
+        onClose={() => setIsSubstituteModalOpen(false)}
+        ingredients={stepIngredients}
+        onSubstitute={handleSubstitute}
+      />
+    </div>
+  );
+};
+
+export default LiveCooking;
