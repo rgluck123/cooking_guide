@@ -15,8 +15,6 @@ As it is a prototype intended for testing, a lot of the navigation is narrowed d
 
 (More information on the participant tasks in section 3.2)
 
-<br>
-
 ## How to run
 
 Link: https://rgluck123.github.io/cooking_guide/
@@ -40,12 +38,12 @@ Open the link (preferably in Chrome), then tap three dots menu and 'Add to Home 
 5. Future work ideas
 6. Conclusions
 
-<br>
 
 ## 1. Introduction
 
 This repository contains my design of the high-fidelity prototype. The user research and the low-fidelity phase were done together with two fellow students. Below are the main results of each phase and how they influenced further design decisions.
 
+<br>
 
 ## 2. Context of use
 
@@ -55,7 +53,6 @@ We conducted 8 sessions with 10 participants. Most of the sessions combined an o
 
 Participants were 21 to 30 years old, mostly students and young professionals living in Madrid (70%). Some of the interviews were done online and because of that didn't include observations.
 
-<br>
 
 ### 2.2 Main findings
 
